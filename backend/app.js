@@ -1,6 +1,5 @@
 import "dotenv/config";
 import express from "express";
-import connectDb from "./config/db.js";
 import MainRouter from "./router/Router.js";
 import GlobalError from "./Error.js";
 import cookieParser from "cookie-parser";
@@ -10,36 +9,44 @@ import path from "path";
 
 const app = express();
 
-// Database connection
-connectDb();
+// Enable trust proxy for platforms like Render/Vercel (required for rate-limit)
+app.set("trust proxy", 1);
 
 // Rate limiting (sensible limit: 1000 requests per 15 minutes)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 1000,
   message: { success: false, message: "Too many requests, please try again later." },
+  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
+  legacyHeaders: false, // Disable `X-RateLimit-*` headers
 });
 app.use(limiter);
 
-// CORS configuration supporting Vite dev ports
+// Allowed Origins Configuration
 const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "http://localhost:3000",
-  "http://127.0.0.1:5173",
-  "http://127.0.0.1:5174",
-];
+  process.env.FRONTEND_URL, // Dynamically pulled from environment variable
+  "https://e-commerce-grocery-website-tau.vercel.app",
+  "http://localhost:5173", // Vite default
+  "http://localhost:3000", // React/Next default
+].filter(Boolean);
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin) || origin.startsWith("http://localhost")) {
+      // Allow requests with no origin (e.g., Postman, mobile apps) or matching origins
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        /^http:\/\/localhost:\d+$/.test(origin)
+      ) {
         callback(null, true);
       } else {
-        callback(null, true);
+        callback(new Error(`CORS policy blocked access for origin: ${origin}`));
       }
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   })
 );
 

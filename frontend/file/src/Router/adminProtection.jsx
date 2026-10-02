@@ -6,7 +6,7 @@ import GroceryLoader from '../components/Loading';
 const AdminProtection = ({ children }) => {
   const { adminRefresh, adminData } = useContext(GlobalContext);
   const location = useLocation();
-console.log(adminData);
+// console.log(adminData);
 
   if (adminRefresh) {
     return <GroceryLoader />;
