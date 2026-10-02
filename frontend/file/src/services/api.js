@@ -2,7 +2,7 @@ import axios from "axios";
 import { toast } from "sonner";
 
 export const api = axios.create({
-  baseURL: "https://e-commerce-grocery-website-6wyf.onrender.com",
+  baseURL: "https://e-commerce-grocery-website-6wyf.onrender.com/api/v1",
   withCredentials: true,
 });
 
