@@ -589,13 +589,13 @@ export default function HomePage() {
               </div>
 
               <div className="pt-4">
-                <a 
+                <Link
                   href="/shop"
                   className="inline-flex items-center gap-2 px-8 py-4 bg-white text-[#122817] hover:bg-[#F2F0E8] font-bold text-xs uppercase tracking-wider transition shadow-md"
                 >
                   Shop To Support A Family
                   <ArrowRight className="w-4 h-4" />
-                </a>
+                </Link>
               </div>
             </div>
 
