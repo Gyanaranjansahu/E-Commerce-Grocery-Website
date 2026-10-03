@@ -6,7 +6,10 @@ import {
   X, 
   ChevronDown,
   Sparkles,
-  Heart
+  Heart,
+  LogOut,
+  Package,
+  ShieldCheck
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { GlobalContext } from '../context/Usecontext';
@@ -14,8 +17,11 @@ import { GlobalContext } from '../context/Usecontext';
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  
   const navigate = useNavigate();
   const { total, user, wishdata, handleUserLogout } = useContext(GlobalContext);
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -67,7 +73,6 @@ export default function Navbar() {
             {/* Desktop Navigation Links */}
             <nav className="hidden xl:flex items-center gap-6 text-xs font-semibold uppercase tracking-wider text-[#3C423C] mr-2">
               <Link to="/shop" className="hover:text-[#1B3821] transition">Shop Harvest</Link>
-              {/* <Link to="/subscription" className="hover:text-[#1B3821] transition">Milk Plan</Link> */}
               <Link to="/purity" className="hover:text-[#1B3821] transition">Lab Reports</Link>
             </nav>
 
@@ -87,8 +92,12 @@ export default function Navbar() {
 
             {/* User Account / Auth Toggle */}
             {user ? (
-              <div className="relative group">
-                <button className="flex items-center gap-2 p-1.5 rounded-full hover:bg-[#F2EFE9] transition text-[#161B16] text-xs font-medium cursor-pointer">
+              <div className="relative">
+                <button 
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  onBlur={() => setTimeout(() => setUserDropdownOpen(false), 200)}
+                  className="flex items-center gap-2 p-1.5 rounded-full hover:bg-[#F2EFE9] transition text-[#161B16] text-xs font-medium cursor-pointer focus:outline-none"
+                >
                   {user.profileImage ? (
                     <img 
                       src={user.profileImage} 
@@ -101,33 +110,35 @@ export default function Navbar() {
                     </div>
                   )}
                   <span className="hidden md:inline font-sans text-xs">{user.name?.split(' ')[0]}</span>
-                  <ChevronDown className="w-3.5 h-3.5 text-[#7A827A]" />
+                  <ChevronDown className={`w-3.5 h-3.5 text-[#7A827A] transition-transform duration-200 ${userDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 
-                {/* Account Dropdown */}
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-[#E6E4DD] shadow-lg rounded-none py-2 hidden group-hover:block transition-all animate-in fade-in slide-in-from-top-1 z-50">
-                  <div className="px-4 py-2 border-b border-[#F0EEE8]">
-                    <p className="text-xs font-bold text-[#161B16]">{user.name}</p>
-                    <p className="text-[10px] text-[#7A827A] truncate">{user.email}</p>
+                {/* Account Dropdown (Uses state instead of group-hover) */}
+                {userDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white border border-[#E6E4DD] shadow-lg rounded-none py-2 animate-in fade-in slide-in-from-top-1 z-50">
+                    <div className="px-4 py-2 border-b border-[#F0EEE8]">
+                      <p className="text-xs font-bold text-[#161B16]">{user.name}</p>
+                      <p className="text-[10px] text-[#7A827A] truncate">{user.email}</p>
+                      {user.role === 'admin' && (
+                        <span className="inline-block mt-1 px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-bold rounded">ADMIN</span>
+                      )}
+                    </div>
                     {user.role === 'admin' && (
-                      <span className="inline-block mt-1 px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-bold rounded">ADMIN</span>
+                      <Link to="/admin/dashboard" className="block px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-[#F8F7F3]">Admin Dashboard</Link>
                     )}
+                    <Link to="/orders" className="block px-4 py-2 text-xs text-[#3C423C] hover:bg-[#F8F7F3]">My Orders</Link>
+                    <Link to="/wishlist" className="block px-4 py-2 text-xs text-[#3C423C] hover:bg-[#F8F7F3]">My Wishlist</Link>
+                    <button 
+                      onClick={async () => {
+                        if (handleUserLogout) await handleUserLogout();
+                        navigate('/login');
+                      }}
+                      className="w-full text-left px-4 py-2 text-xs text-red-700 hover:bg-[#F8F7F3] border-t border-[#F0EEE8] mt-1 cursor-pointer font-medium"
+                    >
+                      Sign Out
+                    </button>
                   </div>
-                  {user.role === 'admin' && (
-                    <Link to="/admin/dashboard" className="block px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-[#F8F7F3]">Admin Dashboard</Link>
-                  )}
-                  <Link to="/orders" className="block px-4 py-2 text-xs text-[#3C423C] hover:bg-[#F8F7F3]">My Orders</Link>
-                  <Link to="/wishlist" className="block px-4 py-2 text-xs text-[#3C423C] hover:bg-[#F8F7F3]">My Wishlist</Link>
-                  <button 
-                    onClick={async () => {
-                      if (handleUserLogout) await handleUserLogout();
-                      navigate('/login');
-                    }}
-                    className="w-full text-left px-4 py-2 text-xs text-red-700 hover:bg-[#F8F7F3] border-t border-[#F0EEE8] mt-1 cursor-pointer font-medium"
-                  >
-                    Sign Out
-                  </button>
-                </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center gap-1.5">
@@ -166,15 +177,29 @@ export default function Navbar() {
 
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 top-28 bg-black/40 z-50 backdrop-blur-xs" onClick={() => setMobileMenuOpen(false)}>
+        <div className="lg:hidden fixed inset-0 top-[112px] bg-black/40 z-50 backdrop-blur-xs" onClick={() => setMobileMenuOpen(false)}>
           <div 
             className="w-4/5 max-w-sm h-full bg-[#FAFAF8] p-6 shadow-2xl flex flex-col justify-between border-r border-[#E6E4DD]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="space-y-6">
               
-              {/* Account Quick Status */}
-              {!user && (
+              {/* Mobile Profile & Account Status Header */}
+              {user ? (
+                <div className="pb-4 border-b border-[#E6E4DD] flex items-center gap-3">
+                  {user.profileImage ? (
+                    <img src={user.profileImage} alt="Profile" className="w-10 h-10 rounded-full object-cover border border-[#C5D8C7]" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-[#1B3821] text-white flex items-center justify-center font-bold text-sm">
+                      {user.name?.[0] || 'U'}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-bold text-[#161B16]">{user.name}</p>
+                    <p className="text-xs text-[#7A827A] truncate max-w-[180px]">{user.email}</p>
+                  </div>
+                </div>
+              ) : (
                 <div className="pb-4 border-b border-[#E6E4DD]">
                   <p className="text-xs text-[#6F756F]">Welcome to Mindful Eating</p>
                   <div className="mt-2 flex gap-3">
@@ -203,6 +228,30 @@ export default function Navbar() {
                 <Link to="/purity" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#1B3821]">Lab Purity Reports</Link>
                 <Link to="/our-story" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#1B3821]">Our Partner Farms</Link>
                 <Link to="/wishlist" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#1B3821]">Saved Favourites</Link>
+
+                {/* User Specific Links inside Mobile Drawer */}
+                {user && (
+                  <div className="pt-4 border-t border-[#E6E4DD] space-y-3 normal-case font-medium text-xs">
+                    {user.role === 'admin' && (
+                      <Link to="/admin/dashboard" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-emerald-800 font-bold">
+                        <ShieldCheck className="w-4 h-4" /> Admin Dashboard
+                      </Link>
+                    )}
+                    <Link to="/orders" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-[#3C423C]">
+                      <Package className="w-4 h-4" /> My Orders
+                    </Link>
+                    <button 
+                      onClick={async () => {
+                        setMobileMenuOpen(false);
+                        if (handleUserLogout) await handleUserLogout();
+                        navigate('/login');
+                      }}
+                      className="flex items-center gap-2 text-red-700 font-semibold cursor-pointer pt-2"
+                    >
+                      <LogOut className="w-4 h-4" /> Sign Out
+                    </button>
+                  </div>
+                )}
               </nav>
             </div>
 
