@@ -189,7 +189,6 @@ export default function HomePage() {
         await handleCart(prod._id);
         if (fetchCart) await fetchCart();
       } else {
-        // Find matching product in backend catalog
         const match = (product || []).find(p =>
           p.name?.toLowerCase().includes(prod.name?.slice(0, 8).toLowerCase())
         );
@@ -251,20 +250,20 @@ export default function HomePage() {
               </p>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
-                <a 
-                  href="/shop"
+                <Link 
+                  to="/shop"
                   className="px-8 py-4 bg-[#1B3821] hover:bg-[#122817] text-white font-semibold text-xs uppercase tracking-wider transition duration-150 flex items-center justify-center gap-2 shadow-md hover:shadow-lg cursor-pointer"
                 >
                   Shop Today's Harvest
                   <ArrowRight className="w-4 h-4" />
-                </a>
-                <a 
-                  href="#community-cause"
+                </Link>
+                <Link
+                  to="/community-cause"
                   className="px-8 py-4 bg-[#FAFAF8] hover:bg-[#F0EFEA] text-[#161B16] font-semibold text-xs uppercase tracking-wider border border-[#DDD9CE] transition duration-150 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Heart className="w-4 h-4 text-emerald-800" />
                   Our Community Mission
-                </a>
+                </Link>
               </div>
 
               {/* Real Value Stats */}
@@ -333,8 +332,8 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <a 
-                  href="/shop?category=produce"
+                <Link 
+                  to="/shop?category=produce"
                   className="p-4 bg-white flex justify-between items-center border-t border-[#EAE8E0] mt-3 hover:bg-[#F9F8F5] transition group/basket"
                 >
                   <div>
@@ -345,7 +344,7 @@ export default function HomePage() {
                     <p className="text-xs text-[#6E756E]">Seasonal staples picked this morning</p>
                   </div>
                   <span className="text-base font-bold text-[#1B3821]">₹480</span>
-                </a>
+                </Link>
               </div>
             </div>
 
@@ -527,17 +526,17 @@ export default function HomePage() {
         </div>
 
         <div className="mt-12 text-center">
-          <a 
-            href="/shop" 
+          <Link 
+            to="/shop" 
             className="inline-flex items-center gap-2 border-b-2 border-[#1B3821] pb-1 text-sm font-bold tracking-wider text-[#1B3821] hover:text-[#122817] uppercase transition"
           >
             Explore All 140+ Farm Staples In Shop
             <ChevronRight className="w-4 h-4" />
-          </a>
+          </Link>
         </div>
       </section>
 
-      {/* 4. HOW YOUR PURCHASE HELPS OTHERS (NEW SECTION) */}
+      {/* 4. HOW YOUR PURCHASE HELPS OTHERS */}
       <section id="community-cause" className="bg-[#122817] text-white py-16 lg:py-20 border-t border-[#23422A]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-12 gap-12 items-center">
@@ -590,7 +589,7 @@ export default function HomePage() {
 
               <div className="pt-4">
                 <Link
-                  href="/shop"
+                  to="/shop"
                   className="inline-flex items-center gap-2 px-8 py-4 bg-white text-[#122817] hover:bg-[#F2F0E8] font-bold text-xs uppercase tracking-wider transition shadow-md"
                 >
                   Shop To Support A Family
