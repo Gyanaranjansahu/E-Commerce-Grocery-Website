@@ -2,7 +2,7 @@ import axios from "axios";
 import { toast } from "sonner";
 
 export const api = axios.create({
-  baseURL: "https://e-commerce-grocery-website-6wyf.onrender.com/api/v1",
+  baseURL: "https://e-commerce-grocery-website-beta.vercel.app/api/v1",
   withCredentials: true,
 });
 
@@ -89,12 +89,6 @@ export async function signup(data) {
 export async function Login({ email, password }) {
   try {
     const response = await api.post("/login", { email, password });
-    if (response.data?.token) {
-      localStorage.setItem("token", response.data.token);
-    }
-    if (response.data?.user) {
-      localStorage.setItem("user", JSON.stringify(response.data.user));
-    }
     toast.success(response.data?.message || "Logged in successfully!");
     return response.data;
   } catch (err) {
@@ -113,18 +107,12 @@ export async function logoutUser() {
     const errorMsg = getErrorMessage(err, "Logout failed");
     toast.error(errorMsg);
     throw new Error(errorMsg);
-  } finally {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
   }
 }
 
 export async function getuser() {
   try {
     const response = await api.get("/getuser");
-    if (response.data?.user) {
-      localStorage.setItem("user", JSON.stringify(response.data.user));
-    }
     return response.data;
   } catch {
     return null;
