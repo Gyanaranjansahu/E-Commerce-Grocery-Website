@@ -73,7 +73,9 @@ export async function signup(data) {
       form.append("profileImage", profileImage);
     }
 
-    const response = await api.post("/api/v1/register", form);
+    const response = await api.post("/api/v1/register", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
 
     toast.success(response.data?.message || "Account registered successfully!");
     return response.data;
@@ -84,7 +86,7 @@ export async function signup(data) {
   }
 }
 
-export async function login({ email, password }) {
+export async function Login({ email, password }) {
   try {
     const response = await api.post("/api/v1/login", { email, password });
     toast.success(response.data?.message || "Logged in successfully!");
@@ -108,7 +110,7 @@ export async function logoutUser() {
   }
 }
 
-export async function getUser() {
+export async function getuser() {
   try {
     const response = await api.get("/api/v1/getuser");
     return response.data;
@@ -144,7 +146,7 @@ export async function getProductById(id) {
 // ==========================================
 // CART
 // ==========================================
-export async function addToCart(productId, quantity = 1) {
+export async function addtoCart(productId, quantity = 1) {
   try {
     const response = await api.post("/api/v1/addtoCart", { productId, quantity });
     toast.success(response?.data?.message || "Item added to cart!");
@@ -156,7 +158,7 @@ export async function addToCart(productId, quantity = 1) {
   }
 }
 
-export async function getCart() {
+export async function Getcart() {
   try {
     const response = await api.get("/api/v1/cartItem");
     return response.data;
@@ -165,7 +167,7 @@ export async function getCart() {
   }
 }
 
-export async function updateCart(productId, quantity) {
+export async function Cartupdate(productId, quantity) {
   try {
     const response = await api.put("/api/v1/updateCart", { productId, quantity });
     return response.data;
@@ -176,7 +178,7 @@ export async function updateCart(productId, quantity) {
   }
 }
 
-export async function deleteCartItem(productId) {
+export async function deleteItem(productId) {
   try {
     const response = await api.delete("/api/v1/removeItem", { data: { productId } });
     toast.info(response?.data?.message || "Item removed from cart");
@@ -188,7 +190,7 @@ export async function deleteCartItem(productId) {
   }
 }
 
-export async function clearCart() {
+export async function clearCartApi() {
   try {
     const response = await api.delete("/api/v1/clearCart");
     return response.data;
@@ -200,7 +202,7 @@ export async function clearCart() {
 // ==========================================
 // WISHLIST
 // ==========================================
-export async function toggleWishlist(productId) {
+export async function toogleWishlist(productId) {
   try {
     const response = await api.post("/api/v1/wishlist", { productId });
     toast.success(response?.data?.message || "Wishlist updated");
@@ -212,16 +214,16 @@ export async function toggleWishlist(productId) {
   }
 }
 
-export async function getWishlist() {
+export const getWishList = async () => {
   try {
     const response = await api.get("/api/v1/wishItem");
     return response.data;
   } catch {
     return { wish: { products: [] } };
   }
-}
+};
 
-export async function deleteWishItem(productId) {
+export const deleteWishItem = async (productId) => {
   try {
     const response = await api.delete("/api/v1/wishlist", { data: { productId } });
     toast.info("Removed from wishlist");
@@ -231,7 +233,7 @@ export async function deleteWishItem(productId) {
     toast.error(errorMsg);
     throw new Error(errorMsg);
   }
-}
+};
 
 // ==========================================
 // ORDERS
@@ -285,7 +287,7 @@ export async function updateOrderStatus(orderId, status) {
 // ==========================================
 // ADMIN MANAGEMENT
 // ==========================================
-export async function getAdminDetails() {
+export async function getAdmin() {
   try {
     const response = await api.get("/api/v1/admin_details");
     return response.data;
@@ -304,7 +306,7 @@ export async function getAllUsers() {
   }
 }
 
-export async function createProduct(productData) {
+export async function create(productData) {
   const form = new FormData();
   form.append("name", productData.name || "");
   form.append("description", productData.description || "");
@@ -317,7 +319,9 @@ export async function createProduct(productData) {
   }
 
   try {
-    const response = await api.post("/api/v1/createProduct", form);
+    const response = await api.post("/api/v1/createProduct", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     toast.success(response.data?.message || "Product created successfully!");
     return response.data;
   } catch (error) {
@@ -351,7 +355,9 @@ export async function updateProduct(productId, productData) {
   }
 
   try {
-    const response = await api.put(`/api/v1/updateProduct/${productId}`, form);
+    const response = await api.put(`/api/v1/updateProduct/${productId}`, form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     toast.success(response.data?.message || "Product updated successfully!");
     return response.data;
   } catch (error) {
