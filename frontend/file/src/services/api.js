@@ -2,7 +2,7 @@ import axios from "axios";
 import { toast } from "sonner";
 
 export const api = axios.create({
-  baseURL: "https://e-commerce-grocery-website-beta.vercel.app/api/v1",
+  baseURL: "https://e-commerce-grocery-website-beta.vercel.app",
   withCredentials: true,
 });
 
@@ -73,9 +73,7 @@ export async function signup(data) {
       form.append("profileImage", profileImage);
     }
 
-    const response = await api.post("/register", form, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const response = await api.post("/api/v1/register", form);
 
     toast.success(response.data?.message || "Account registered successfully!");
     return response.data;
@@ -86,9 +84,9 @@ export async function signup(data) {
   }
 }
 
-export async function Login({ email, password }) {
+export async function login({ email, password }) {
   try {
-    const response = await api.post("/login", { email, password });
+    const response = await api.post("/api/v1/login", { email, password });
     toast.success(response.data?.message || "Logged in successfully!");
     return response.data;
   } catch (err) {
@@ -100,7 +98,7 @@ export async function Login({ email, password }) {
 
 export async function logoutUser() {
   try {
-    const response = await api.post("/logout");
+    const response = await api.post("/api/v1/logout");
     toast.success(response.data?.message || "Signed out successfully");
     return response.data;
   } catch (err) {
@@ -110,9 +108,9 @@ export async function logoutUser() {
   }
 }
 
-export async function getuser() {
+export async function getUser() {
   try {
-    const response = await api.get("/getuser");
+    const response = await api.get("/api/v1/getuser");
     return response.data;
   } catch {
     return null;
@@ -124,7 +122,7 @@ export async function getuser() {
 // ==========================================
 export async function getItems() {
   try {
-    const response = await api.get("/getItem");
+    const response = await api.get("/api/v1/getItem");
     return response.data;
   } catch (error) {
     console.error("Failed to fetch catalog:", error);
@@ -134,7 +132,7 @@ export async function getItems() {
 
 export async function getProductById(id) {
   try {
-    const response = await api.get(`/product/${id}`);
+    const response = await api.get(`/api/v1/product/${id}`);
     return response.data;
   } catch (error) {
     const errorMsg = getErrorMessage(error, "Failed to fetch product");
@@ -146,9 +144,9 @@ export async function getProductById(id) {
 // ==========================================
 // CART
 // ==========================================
-export async function addtoCart(productId, quantity = 1) {
+export async function addToCart(productId, quantity = 1) {
   try {
-    const response = await api.post("/addtoCart", { productId, quantity });
+    const response = await api.post("/api/v1/addtoCart", { productId, quantity });
     toast.success(response?.data?.message || "Item added to cart!");
     return response.data;
   } catch (error) {
@@ -158,18 +156,18 @@ export async function addtoCart(productId, quantity = 1) {
   }
 }
 
-export async function Getcart() {
+export async function getCart() {
   try {
-    const response = await api.get("/cartItem");
+    const response = await api.get("/api/v1/cartItem");
     return response.data;
   } catch {
     return { data: { products: [] } };
   }
 }
 
-export async function Cartupdate(productId, quantity) {
+export async function updateCart(productId, quantity) {
   try {
-    const response = await api.put("/updateCart", { productId, quantity });
+    const response = await api.put("/api/v1/updateCart", { productId, quantity });
     return response.data;
   } catch (error) {
     const errorMsg = getErrorMessage(error, "Failed to update cart");
@@ -178,9 +176,9 @@ export async function Cartupdate(productId, quantity) {
   }
 }
 
-export async function deleteItem(productId) {
+export async function deleteCartItem(productId) {
   try {
-    const response = await api.delete("/removeItem", { data: { productId } });
+    const response = await api.delete("/api/v1/removeItem", { data: { productId } });
     toast.info(response?.data?.message || "Item removed from cart");
     return response.data;
   } catch (error) {
@@ -190,9 +188,9 @@ export async function deleteItem(productId) {
   }
 }
 
-export async function clearCartApi() {
+export async function clearCart() {
   try {
-    const response = await api.delete("/clearCart");
+    const response = await api.delete("/api/v1/clearCart");
     return response.data;
   } catch (error) {
     console.error("Failed to clear cart:", error);
@@ -202,9 +200,9 @@ export async function clearCartApi() {
 // ==========================================
 // WISHLIST
 // ==========================================
-export async function toogleWishlist(productId) {
+export async function toggleWishlist(productId) {
   try {
-    const response = await api.post("/wishlist", { productId });
+    const response = await api.post("/api/v1/wishlist", { productId });
     toast.success(response?.data?.message || "Wishlist updated");
     return response.data;
   } catch (error) {
@@ -214,18 +212,18 @@ export async function toogleWishlist(productId) {
   }
 }
 
-export const getWishList = async () => {
+export async function getWishlist() {
   try {
-    const response = await api.get("/wishItem");
+    const response = await api.get("/api/v1/wishItem");
     return response.data;
   } catch {
     return { wish: { products: [] } };
   }
-};
+}
 
-export const deleteWishItem = async (productId) => {
+export async function deleteWishItem(productId) {
   try {
-    const response = await api.delete("/wishlist", { data: { productId } });
+    const response = await api.delete("/api/v1/wishlist", { data: { productId } });
     toast.info("Removed from wishlist");
     return response.data;
   } catch (error) {
@@ -233,14 +231,14 @@ export const deleteWishItem = async (productId) => {
     toast.error(errorMsg);
     throw new Error(errorMsg);
   }
-};
+}
 
 // ==========================================
 // ORDERS
 // ==========================================
 export async function createOrder(orderData) {
   try {
-    const response = await api.post("/order", orderData);
+    const response = await api.post("/api/v1/order", orderData);
     toast.success(response.data?.message || "Order placed successfully!");
     return response.data;
   } catch (error) {
@@ -252,7 +250,7 @@ export async function createOrder(orderData) {
 
 export async function getMyOrders() {
   try {
-    const response = await api.get("/myOrders");
+    const response = await api.get("/api/v1/myOrders");
     return response.data;
   } catch (error) {
     const errorMsg = getErrorMessage(error, "Failed to fetch orders");
@@ -263,7 +261,7 @@ export async function getMyOrders() {
 
 export async function getAllOrders() {
   try {
-    const response = await api.get("/admin/orders");
+    const response = await api.get("/api/v1/admin/orders");
     return response.data;
   } catch (error) {
     const errorMsg = getErrorMessage(error, "Failed to fetch orders");
@@ -274,7 +272,7 @@ export async function getAllOrders() {
 
 export async function updateOrderStatus(orderId, status) {
   try {
-    const response = await api.put(`/order/status/${orderId}`, { status });
+    const response = await api.put(`/api/v1/order/status/${orderId}`, { status });
     toast.success(response.data?.message || `Order status updated to ${status}`);
     return response.data;
   } catch (error) {
@@ -287,9 +285,9 @@ export async function updateOrderStatus(orderId, status) {
 // ==========================================
 // ADMIN MANAGEMENT
 // ==========================================
-export async function getAdmin() {
+export async function getAdminDetails() {
   try {
-    const response = await api.get("/admin_details");
+    const response = await api.get("/api/v1/admin_details");
     return response.data;
   } catch {
     return null;
@@ -298,7 +296,7 @@ export async function getAdmin() {
 
 export async function getAllUsers() {
   try {
-    const response = await api.get("/admin/users");
+    const response = await api.get("/api/v1/admin/users");
     return response.data;
   } catch (error) {
     console.error("Failed to fetch users:", error);
@@ -306,7 +304,7 @@ export async function getAllUsers() {
   }
 }
 
-export async function create(productData) {
+export async function createProduct(productData) {
   const form = new FormData();
   form.append("name", productData.name || "");
   form.append("description", productData.description || "");
@@ -319,9 +317,7 @@ export async function create(productData) {
   }
 
   try {
-    const response = await api.post("/createProduct", form, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const response = await api.post("/api/v1/createProduct", form);
     toast.success(response.data?.message || "Product created successfully!");
     return response.data;
   } catch (error) {
@@ -333,7 +329,7 @@ export async function create(productData) {
 
 export async function deleteProduct(productId) {
   try {
-    const response = await api.delete(`/deleteProduct/${productId}`);
+    const response = await api.delete(`/api/v1/deleteProduct/${productId}`);
     toast.success(response.data?.message || "Product deleted successfully!");
     return response.data;
   } catch (error) {
@@ -355,9 +351,7 @@ export async function updateProduct(productId, productData) {
   }
 
   try {
-    const response = await api.put(`/updateProduct/${productId}`, form, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const response = await api.put(`/api/v1/updateProduct/${productId}`, form);
     toast.success(response.data?.message || "Product updated successfully!");
     return response.data;
   } catch (error) {
