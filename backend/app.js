@@ -23,6 +23,7 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Allowed Origins Configuration
+app.set("trust proxy", 1);
 const allowedOrigins = [
   process.env.FRONTEND_URL, // Dynamically pulled from environment variable
   "https://e-commerce-grocery-website-tau.vercel.app",
