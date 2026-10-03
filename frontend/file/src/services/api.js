@@ -6,6 +6,30 @@ export const api = axios.create({
   withCredentials: true,
 });
 
+// Automatically attach JWT token from localStorage to every outgoing request
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response interceptor to handle expired sessions cleanly
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Helper to extract clean error message from backend responses
 export const getErrorMessage = (err, fallback = "Something went wrong") => {
   return (
@@ -65,6 +89,12 @@ export async function signup(data) {
 export async function Login({ email, password }) {
   try {
     const response = await api.post("/login", { email, password });
+    if (response.data?.token) {
+      localStorage.setItem("token", response.data.token);
+    }
+    if (response.data?.user) {
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+    }
     toast.success(response.data?.message || "Logged in successfully!");
     return response.data;
   } catch (err) {
@@ -83,12 +113,18 @@ export async function logoutUser() {
     const errorMsg = getErrorMessage(err, "Logout failed");
     toast.error(errorMsg);
     throw new Error(errorMsg);
+  } finally {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
   }
 }
 
 export async function getuser() {
   try {
     const response = await api.get("/getuser");
+    if (response.data?.user) {
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+    }
     return response.data;
   } catch {
     return null;

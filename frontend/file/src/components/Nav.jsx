@@ -67,7 +67,7 @@ export default function Navbar() {
             {/* Desktop Navigation Links */}
             <nav className="hidden xl:flex items-center gap-6 text-xs font-semibold uppercase tracking-wider text-[#3C423C] mr-2">
               <Link to="/shop" className="hover:text-[#1B3821] transition">Shop Harvest</Link>
-              <Link to="/subscription" className="hover:text-[#1B3821] transition">Milk Plan</Link>
+              {/* <Link to="/subscription" className="hover:text-[#1B3821] transition">Milk Plan</Link> */}
               <Link to="/purity" className="hover:text-[#1B3821] transition">Lab Reports</Link>
             </nav>
 
