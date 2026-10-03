@@ -27,7 +27,8 @@ const allowedOrigins = [
   process.env.FRONTEND_URL, // Dynamically pulled from environment variable
   "https://e-commerce-grocery-website-tau.vercel.app",
   "http://localhost:5173", // Vite default
-  "http://localhost:3000", // React/Next default
+  "http://localhost:3000",
+  "https://e-commerce-grocery-website-beta.vercel.app" // React/Next default
 ].filter(Boolean);
 
 app.use(
