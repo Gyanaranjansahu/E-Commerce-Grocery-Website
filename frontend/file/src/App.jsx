@@ -39,17 +39,29 @@ const App = () => {
         <Routes>
           {/* Public Storefront */}
           <Route path="/" element={<HomePage />} />
-          <Route path="/shop" element={<CollectionPage />} />
+          <Route path="/shop" element={
+            <Protection>
+              <CollectionPage />
+            </Protection>
+          } />
           <Route path="/our-story" element={<OurStory />} />
           <Route path="/purity" element={<LabPurityReport />} />
-          <Route path="/wishlist" element={<WishlistPage />} />
+          <Route path="/wishlist" element={
+            <Protection>
+              <WishlistPage />
+            </Protection>
+          } />
 
           {/* Authentication */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<SignupUI />} />
 
           {/* User Protected Cart & Orders */}
-          <Route path="/cart" element={<CartPage />} />
+          <Route path="/cart" element={
+            <Protection>
+              <CartPage />
+            </Protection>
+          } />
           <Route
             path="/order"
             element={

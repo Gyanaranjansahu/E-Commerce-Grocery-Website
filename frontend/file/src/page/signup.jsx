@@ -1,21 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  User, 
-  Mail, 
-  Lock, 
-  MapPin, 
-  Camera, 
-  Eye, 
-  EyeOff, 
-  ArrowRight, 
-  CheckCircle2, 
-  ShieldCheck, 
-  Sparkles,
-  Loader2,
-  Leaf
+import {
+  User, Mail, Lock, MapPin, Camera, Eye, EyeOff, ArrowRight,
+  Check, ShieldCheck, Loader2, Phone, Home
 } from 'lucide-react';
 import Costume from '../services/costume.js';
 import { useNavigate, Link } from 'react-router-dom';
+
+/* Tokens (shared with HomePage)
+   ink #112018 · forest #17402A · leaf #3E7D52 · marigold #F0B429 · mist #F2F5EE */
+
+const PERKS = [
+  <>Doorstep delivery completed by <strong className="font-semibold text-white">6:30 AM</strong>.</>,
+  'Open access to weekly third-party pesticide and chemical lab reports.',
+  'Zero-landfill glass bottle pickup, sanitised and reused.',
+  'Pause, change quantity or skip a delivery in one tap.'
+];
+
+const field =
+  "w-full bg-white text-[#112018] text-base sm:text-[15px] py-3.5 rounded-xl border border-[#17402A]/15 " +
+  "focus:border-[#17402A] focus:ring-4 focus:ring-[#17402A]/10 outline-none transition placeholder:text-[#9AA79D]";
+
+const label = "block text-[13px] font-semibold text-[#34443A] mb-1.5";
 
 export default function SignupUI() {
   const navigate = useNavigate();
@@ -79,260 +84,210 @@ export default function SignupUI() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#FDFCF9] text-[#191919] flex flex-col justify-center py-10 sm:py-16 px-4 sm:px-6 lg:px-8 font-sans antialiased overflow-hidden selection:bg-[#1C281D] selection:text-white">
-      
-      {/* Subtle Ambient Grain & Light Gradient Blurs */}
-      <div className="pointer-events-none absolute -top-40 -left-40 w-96 h-96 bg-[#E8EFE8] rounded-full blur-3xl opacity-70" />
-      <div className="pointer-events-none absolute -bottom-40 -right-40 w-96 h-96 bg-[#F3EFE6] rounded-full blur-3xl opacity-80" />
+    <div className="su min-h-screen bg-[#F2F5EE] text-[#112018] antialiased selection:bg-[#17402A] selection:text-white flex items-center justify-center px-3 py-6 sm:px-6 sm:py-12">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap');
+        .su { font-family: 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif; }
+        .su .display { font-family: 'Fraunces', Georgia, serif; font-optical-sizing: auto; letter-spacing: -0.02em; }
+        .su a:focus-visible, .su button:focus-visible, .su label:focus-within { outline: 2px solid #F0B429; outline-offset: 3px; }
+        @keyframes su-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+        .su .rise { animation: su-rise .8s cubic-bezier(.2,.7,.2,1) both; }
+        @media (prefers-reduced-motion: reduce) { .su .rise { animation: none; } }
+      `}</style>
 
-      <div className="max-w-6xl mx-auto w-full relative z-10">
-        
-        {/* Brand Header */}
-        <div className="text-center mb-8 sm:mb-10 transition-all duration-700 ease-out">
-          <Link to="/" className="inline-flex flex-col items-center group">
-            <span className="font-serif text-3xl sm:text-4xl font-light tracking-[-0.02em] text-[#151915] group-hover:opacity-85 transition-opacity">
-              V E D A
-            </span>
-            <span className="text-[8px] font-mono font-semibold tracking-[0.45em] text-[#2C4A31] uppercase mt-1">
-              Sanctuary Organics
-            </span>
-          </Link>
-          <h1 className="mt-4 text-xl sm:text-2xl lg:text-3xl font-serif font-normal text-[#171B17]">
-            Begin Your Farm-to-Kitchen Journal
-          </h1>
-          <p className="mt-1.5 text-xs text-stone-500 max-w-md mx-auto font-light leading-relaxed">
-            Reserved allocations for fresh unpasteurized A2 milk, cold-press oils, and dawn-harvested staples.
-          </p>
-        </div>
+      <div className="rise w-full max-w-6xl grid lg:grid-cols-12 rounded-[1.75rem] sm:rounded-[2.25rem] overflow-hidden bg-white shadow-[0_40px_90px_-40px_rgba(17,32,24,0.45)] ring-1 ring-[#17402A]/10">
 
-        {/* Card Shell */}
-        <div className="bg-white border border-[#EAE6DD] shadow-[0_12px_48px_-16px_rgba(20,24,20,0.06)] grid lg:grid-cols-12 overflow-hidden transition-all duration-500 hover:border-[#DFDAD0]">
-          
-          {/* Left Column: Brand Pillars */}
-          <div className="hidden lg:flex lg:col-span-5 bg-[#172418] text-[#FAF8F5] p-10 xl:p-12 flex-col justify-between relative overflow-hidden border-r border-[#223324]">
-            
-            {/* Ambient Leaf Glow */}
-            <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-              <Leaf className="w-48 h-48 stroke-[0.75]" />
-            </div>
+        {/* Brand panel: full on desktop, compact banner on mobile */}
+        <aside className="relative lg:col-span-5 text-white overflow-hidden bg-[#0F2D1D]">
+          <img
+            src="https://images.unsplash.com/photo-1610348725531-843dff563e2c?auto=format&fit=crop&w=1000&q=80"
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover opacity-40"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0F2D1D]/70 via-[#0F2D1D]/80 to-[#0F2D1D]" />
 
-            <div className="space-y-7 relative z-10">
-              <div className="inline-flex items-center gap-2 bg-[#233525] text-[#C9DEC9] px-3 py-1 text-[10px] font-mono tracking-[0.2em] uppercase border border-[#304732]">
-                <Sparkles className="w-3 h-3 text-[#A9CFA9]" />
-                Estate Member Privileges
-              </div>
+          <div className="relative h-full flex flex-col justify-between gap-8 p-6 sm:p-10 lg:p-12">
+            <div>
+              <Link to="/" className="inline-block group">
+                <span className="display text-3xl sm:text-4xl font-medium tracking-[0.18em] group-hover:opacity-85 transition-opacity">VEDA</span>
+                <span className="block text-sm text-[#BFE3C7] mt-0.5">Sanctuary Organics</span>
+              </Link>
 
-              <h2 className="font-serif text-2xl font-light leading-snug tracking-tight text-[#FAF8F5]">
-                Purity delivered before the city stirs awake.
+              <h2 className="display mt-6 lg:mt-14 text-[1.7rem] sm:text-4xl lg:text-[2.6rem] font-medium leading-[1.1] max-w-md">
+                Purity at your door before the city wakes.
               </h2>
+              <p className="mt-3 text-[#BFD0C3] text-[15px] leading-relaxed max-w-sm lg:hidden">
+                Fresh A2 milk, cold-pressed oils and dawn-harvested staples, reserved for you.
+              </p>
 
-              <ul className="space-y-4 text-xs text-[#CFDBCF] font-light leading-relaxed pt-2">
-                <li className="flex items-start gap-3 group">
-                  <span className="mt-0.5 w-4 h-4 rounded-full bg-[#233525] flex items-center justify-center text-[#A9CFA9] shrink-0 border border-[#344D36]">
-                    <CheckCircle2 className="w-3 h-3" />
-                  </span>
-                  <span>Direct dawn doorstep drops completed by <strong>06:30 AM</strong>.</span>
-                </li>
-                <li className="flex items-start gap-3 group">
-                  <span className="mt-0.5 w-4 h-4 rounded-full bg-[#233525] flex items-center justify-center text-[#A9CFA9] shrink-0 border border-[#344D36]">
-                    <CheckCircle2 className="w-3 h-3" />
-                  </span>
-                  <span>Uncensored access to weekly third-party pesticide & chemical lab audits.</span>
-                </li>
-                <li className="flex items-start gap-3 group">
-                  <span className="mt-0.5 w-4 h-4 rounded-full bg-[#233525] flex items-center justify-center text-[#A9CFA9] shrink-0 border border-[#344D36]">
-                    <CheckCircle2 className="w-3 h-3" />
-                  </span>
-                  <span>Zero landfill glass bottle collection with automatic sanitization cycles.</span>
-                </li>
-                <li className="flex items-start gap-3 group">
-                  <span className="mt-0.5 w-4 h-4 rounded-full bg-[#233525] flex items-center justify-center text-[#A9CFA9] shrink-0 border border-[#344D36]">
-                    <CheckCircle2 className="w-3 h-3" />
-                  </span>
-                  <span>Flexible cadence: pause, modify quantity, or skip on one touch.</span>
-                </li>
+              <ul className="hidden lg:block mt-10 space-y-5">
+                {PERKS.map((p, i) => (
+                  <li key={i} className="flex gap-3.5 text-[15px] text-[#CFDBCF] leading-relaxed">
+                    <span className="shrink-0 mt-0.5 w-5 h-5 rounded-full bg-[#F0B429] text-[#112018] flex items-center justify-center">
+                      <Check className="w-3 h-3" strokeWidth={3} />
+                    </span>
+                    <span>{p}</span>
+                  </li>
+                ))}
               </ul>
             </div>
 
-            <div className="pt-8 border-t border-[#253826] text-[10px] font-mono tracking-wider uppercase text-[#96AC98] flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-[#A9CFA9]" />
-              <span>Certified 256-bit Encrypted Member Record</span>
+            <div className="hidden lg:flex items-center gap-2.5 pt-6 border-t border-white/10 text-sm text-[#A4B8A9]">
+              <ShieldCheck className="w-5 h-5 text-[#F0B429]" />
+              Your details are stored with 256-bit encryption.
             </div>
           </div>
+        </aside>
 
-          {/* Right Column: Interactive Form */}
-          <div className="lg:col-span-7 p-6 sm:p-10 lg:p-12 bg-[#FCFBF8]">
-            <form className="space-y-6" onSubmit={handle}>
-              
-              {/* Profile Avatar Uploader */}
-              <div className="flex flex-col sm:flex-row items-center gap-5 pb-6 border-b border-[#EFEBE0]">
-                <div className="relative group">
-                  <div className="w-20 h-20 bg-[#F4F1EA] border border-[#DDD8CB] flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:border-[#1E2E1F]">
-                    {previewUrl ? (
-                      <img 
-                        src={previewUrl} 
-                        alt="Preview" 
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                      />
-                    ) : (
-                      <User className="w-7 h-7 text-stone-400 stroke-[1.25]" />
-                    )}
-                  </div>
-                  
-                  <label 
-                    htmlFor="profileImage" 
-                    className="absolute -bottom-1 -right-1 bg-[#172418] hover:bg-black text-[#FAF8F5] p-1.5 cursor-pointer shadow-md transition-all duration-200 hover:scale-105"
-                    title="Upload Member Portrait"
+        {/* Form */}
+        <div className="lg:col-span-7 p-5 sm:p-10 lg:p-12 xl:p-14">
+          <header className="mb-8">
+            <h1 className="display text-3xl sm:text-4xl font-medium">Create your account</h1>
+            <p className="mt-2 text-[#5E6D62] text-[15px] leading-relaxed">
+              Set up your profile and delivery address to start ordering farm-fresh food.
+            </p>
+          </header>
+
+          <form className="space-y-8" onSubmit={handle}>
+
+            {/* Avatar */}
+            <div className="flex items-center gap-5">
+              <div className="relative shrink-0">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#E6EFE4] ring-4 ring-white shadow-[0_10px_25px_-10px_rgba(17,32,24,0.4)] flex items-center justify-center overflow-hidden">
+                  {previewUrl ? (
+                    <img src={previewUrl} alt="Profile preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-8 h-8 text-[#7C8B80]" strokeWidth={1.5} />
+                  )}
+                </div>
+                <label
+                  htmlFor="profileImage"
+                  className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-[#17402A] hover:bg-[#0F2D1D] text-white flex items-center justify-center cursor-pointer ring-2 ring-white transition-colors"
+                  title="Upload profile photo"
+                >
+                  <Camera className="w-4 h-4" />
+                </label>
+                <input
+                  id="profileImage"
+                  name="profileImage"
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={InputHandle}
+                />
+              </div>
+              <div>
+                <h3 className="font-semibold">Profile photo</h3>
+                <p className="text-sm text-[#6B7A6F] mt-0.5 leading-snug">
+                  Optional. Helps our delivery partner hand over your order.
+                </p>
+              </div>
+            </div>
+
+            {/* Personal details */}
+            <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5">
+              <legend className="sr-only">Personal details</legend>
+
+              <div>
+                <label htmlFor="name" className={label}>Full name</label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-[#7C8B80] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    id="name" type="text" name="name" required autoComplete="name"
+                    value={name} onChange={InputHandle}
+                    placeholder="Radhika Sharma"
+                    className={`${field} pl-10 pr-3`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="email" className={label}>Email address</label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-[#7C8B80] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    id="email" type="email" name="email" required autoComplete="email"
+                    value={email} onChange={InputHandle}
+                    placeholder="radhika@example.com"
+                    className={`${field} pl-10 pr-3`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="phone" className={label}>Phone number</label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-[#7C8B80] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <span className="absolute left-10 top-1/2 -translate-y-1/2 text-[15px] font-medium text-[#34443A] pr-2.5 border-r border-[#17402A]/15">+91</span>
+                  <input
+                    id="phone" type="tel" name="phone" required inputMode="numeric" autoComplete="tel-national"
+                    value={phone} onChange={InputHandle} maxLength={10}
+                    placeholder="98765 43210"
+                    className={`${field} pl-[5.5rem] pr-3`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="password" className={label}>Password</label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-[#7C8B80] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    id="password" type={showPass ? "text" : "password"} name="password" required autoComplete="new-password"
+                    value={password} onChange={InputHandle}
+                    placeholder="Create a password"
+                    className={`${field} pl-10 pr-12`}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-lg text-[#7C8B80] hover:text-[#112018] transition cursor-pointer"
+                    onClick={() => setShowpass(!showPass)}
+                    aria-label={showPass ? "Hide password" : "Show password"}
                   >
-                    <Camera className="w-3.5 h-3.5" />
-                  </label>
-                  <input 
-                    id="profileImage" 
-                    name="profileImage" 
-                    type="file" 
-                    accept="image/*" 
-                    className="hidden" 
-                    onChange={InputHandle}
-                  />
+                    {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
+              </div>
+            </fieldset>
 
-                <div className="text-center sm:text-left">
-                  <h3 className="text-xs font-mono uppercase tracking-widest text-[#151915]">
-                    Member Portrait
-                  </h3>
-                  <p className="text-[11px] text-stone-500 mt-1 font-light leading-normal">
-                    Optional photo for swift courier handover and gated community access.
-                  </p>
+            {/* Address */}
+            <fieldset className="space-y-4 pt-8 border-t border-[#17402A]/10">
+              <legend className="flex items-center gap-2 text-lg display font-medium -mb-1 float-left w-full">
+                <span className="w-8 h-8 rounded-full bg-[#E6EFE4] text-[#17402A] flex items-center justify-center">
+                  <MapPin className="w-4 h-4" />
+                </span>
+                Delivery address
+              </legend>
+
+              <div className="clear-both pt-1">
+                <label htmlFor="flat" className={label}>Flat, house or society</label>
+                <div className="relative">
+                  <Home className="w-4 h-4 text-[#7C8B80] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    id="flat" type="text" name="flat" autoComplete="address-line1"
+                    value={flat} onChange={InputHandle}
+                    placeholder="Flat / Villa / House no., apartment or society"
+                    className={`${field} pl-10 pr-3`}
+                  />
                 </div>
               </div>
 
-              {/* Personal Details */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
-                {/* Full Name */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono uppercase tracking-wider text-stone-500">
-                    Full Legal Name
-                  </label>
-                  <div className="relative">
-                    <input 
-                      type="text"
-                      name="name"
-                      required
-                      value={name}
-                      onChange={InputHandle}
-                      placeholder="e.g. Radhika Sharma"
-                      className="w-full bg-white text-[#161B16] text-xs py-3 pl-9 pr-3 border border-[#DDD8CB] focus:border-[#172418] focus:ring-1 focus:ring-[#172418] outline-none transition duration-200 placeholder:text-stone-400"
-                    />
-                    <User className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  </div>
-                </div>
-
-                {/* Email Address */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono uppercase tracking-wider text-stone-500">
-                    Email Address
-                  </label>
-                  <div className="relative">
-                    <input 
-                      type="email"
-                      name="email"
-                      required
-                      value={email}
-                      onChange={InputHandle}
-                      placeholder="radhika@example.com"
-                      className="w-full bg-white text-[#161B16] text-xs py-3 pl-9 pr-3 border border-[#DDD8CB] focus:border-[#172418] focus:ring-1 focus:ring-[#172418] outline-none transition duration-200 placeholder:text-stone-400"
-                    />
-                    <Mail className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  </div>
-                </div>
-
-                {/* Phone Number */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono uppercase tracking-wider text-stone-500">
-                    Phone (Dawn Dispatch SMS)
-                  </label>
-                  <div className="flex">
-                    <span className="inline-flex items-center px-3 text-xs font-mono bg-[#F2EFE8] border border-r-0 border-[#DDD8CB] text-stone-600">
-                      +91
-                    </span>
-                    <input 
-                      type="tel"
-                      name="phone"
-                      required
-                      value={phone}
-                      onChange={InputHandle}
-                      maxLength={10}
-                      placeholder="98765 43210"
-                      className="w-full bg-white text-[#161B16] text-xs py-3 px-3 border border-[#DDD8CB] focus:border-[#172418] focus:ring-1 focus:ring-[#172418] outline-none transition duration-200 placeholder:text-stone-400"
-                    />
-                  </div>
-                </div>
-
-                {/* Password with View Toggle */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono uppercase tracking-wider text-stone-500">
-                    Account Password
-                  </label>
-                  <div className="relative">
-                    <input 
-                      type={showPass ? "text" : "password"}
-                      name="password"
-                      required
-                      value={password}
-                      onChange={InputHandle}
-                      placeholder="••••••••"
-                      className="w-full bg-white text-[#161B16] text-xs py-3 pl-9 pr-9 border border-[#DDD8CB] focus:border-[#172418] focus:ring-1 focus:ring-[#172418] outline-none transition duration-200 placeholder:text-stone-400"
-                    />
-                    <Lock className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <button 
-                      type="button" 
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 transition cursor-pointer p-1"  
-                      onClick={() => setShowpass(!showPass)}
-                      aria-label="Toggle password view"
-                    >
-                      {showPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Address Fields */}
-              <div className="pt-5 border-t border-[#EFEBE0] space-y-3">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-3.5 h-3.5 text-[#2C4A31]" />
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-[#161B16]">
-                    Morning Drop Destination
-                  </span>
-                </div>
-
-                <div>
-                  <input 
-                    type="text"
-                    name="flat"
-                    value={flat}
-                    onChange={InputHandle}
-                    placeholder="Flat / Villa / House No., Apartment or Gated Society"
-                    className="w-full bg-white text-[#161B16] text-xs py-3 px-3.5 border border-[#DDD8CB] focus:border-[#172418] focus:ring-1 focus:ring-[#172418] outline-none transition duration-200 placeholder:text-stone-400"
+              <div className="grid grid-cols-1 sm:grid-cols-6 gap-4">
+                <div className="sm:col-span-3">
+                  <label htmlFor="landmark" className={label}>Area or landmark</label>
+                  <input
+                    id="landmark" type="text" name="landmark" autoComplete="address-line2"
+                    value={landmark} onChange={InputHandle}
+                    placeholder="Near Master Canteen"
+                    className={`${field} px-3.5`}
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <input 
-                    type="text"
-                    name="landmark"
-                    value={landmark}
-                    onChange={InputHandle}
-                    placeholder="Area / Prominent Landmark"
-                    className="bg-white text-[#161B16] text-xs py-3 px-3.5 border border-[#DDD8CB] focus:border-[#172418] focus:ring-1 focus:ring-[#172418] outline-none transition duration-200 placeholder:text-stone-400"
-                  />
-
+                <div className="sm:col-span-2">
+                  <label htmlFor="city" className={label}>City</label>
                   <select
-                    name="city"
-                    value={city}
-                    onChange={InputHandle}
-                    className="bg-white text-[#161B16] text-xs py-3 px-3 border border-[#DDD8CB] focus:border-[#172418] focus:ring-1 focus:ring-[#172418] outline-none transition duration-200 cursor-pointer"
+                    id="city" name="city" value={city} onChange={InputHandle}
+                    className={`${field} px-3 cursor-pointer`}
                   >
                     <option value="Bhubaneswar">Bhubaneswar</option>
                     <option value="Cuttack">Cuttack</option>
@@ -340,72 +295,73 @@ export default function SignupUI() {
                     <option value="Puri">Puri</option>
                     <option value="Ganjam">Ganjam</option>
                   </select>
+                </div>
 
-                  <input 
-                    type="text"
-                    name="pin"
-                    value={pin}
-                    onChange={InputHandle}
-                    maxLength={6}
-                    placeholder="PIN Code"
-                    className="bg-white text-[#161B16] text-xs py-3 px-3.5 border border-[#DDD8CB] focus:border-[#172418] focus:ring-1 focus:ring-[#172418] outline-none transition duration-200 placeholder:text-stone-400"
+                <div className="sm:col-span-1">
+                  <label htmlFor="pin" className={label}>PIN code</label>
+                  <input
+                    id="pin" type="text" name="pin" inputMode="numeric" autoComplete="postal-code"
+                    value={pin} onChange={InputHandle} maxLength={6}
+                    placeholder="751001"
+                    className={`${field} px-3.5`}
                   />
                 </div>
               </div>
+            </fieldset>
 
-              {/* Consent Checkbox */}
-              <div className="flex items-start gap-2.5 pt-1">
-                <input 
-                  type="checkbox"
-                  id="agree"
-                  name="agree"
-                  checked={Boolean(agree)}
-                  onChange={InputHandle}
-                  className="mt-0.5 accent-[#172418] w-3.5 h-3.5 rounded-none cursor-pointer"
-                />
-                <label htmlFor="agree" className="text-[11px] text-stone-500 font-light leading-snug cursor-pointer select-none">
-                  I agree to receive dawn dispatch updates and accept the{' '}
-                  <Link to="/terms" className="underline text-stone-800 hover:text-black transition">Terms of Service</Link> &{' '}
-                  <Link to="/privacy" className="underline text-stone-800 hover:text-black transition">Privacy Charter</Link>.
-                </label>
-              </div>
+            {/* Consent */}
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="agree"
+                name="agree"
+                checked={Boolean(agree)}
+                onChange={InputHandle}
+                className="mt-0.5 w-5 h-5 shrink-0 rounded-md accent-[#17402A] cursor-pointer"
+              />
+              <label htmlFor="agree" className="text-sm text-[#5E6D62] leading-relaxed cursor-pointer select-none">
+                I agree to receive delivery updates and accept the{' '}
+                <Link to="/terms" className="font-semibold text-[#17402A] underline underline-offset-2 hover:text-[#0F2D1D]">Terms of Service</Link> and{' '}
+                <Link to="/privacy" className="font-semibold text-[#17402A] underline underline-offset-2 hover:text-[#0F2D1D]">Privacy Policy</Link>.
+              </label>
+            </div>
 
-              {/* Animated Submit CTA */}
-              <button 
+            {/* Submit */}
+            <div className="space-y-5">
+              <button
                 type="submit"
                 disabled={loading}
-                className={`w-full py-4 bg-[#172418] text-[#FAF8F5] font-mono text-[10px] tracking-[0.25em] uppercase transition-all duration-300 flex items-center justify-center gap-2 group shadow-sm ${
-                  loading 
-                    ? "opacity-75 cursor-not-allowed" 
-                    : "hover:bg-black cursor-pointer"
+                className={`group w-full py-4 rounded-full bg-[#17402A] text-white font-semibold text-base transition flex items-center justify-center gap-2 shadow-[0_16px_34px_-14px_rgba(23,64,42,0.8)] ${
+                  loading ? "opacity-70 cursor-not-allowed" : "hover:bg-[#0F2D1D] cursor-pointer"
                 }`}
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Inscribing Member Ledger...</span>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Creating your account...</span>
                   </>
                 ) : (
                   <>
-                    <span>Confirm Registration & Access Harvest</span>
-                    <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1.5" />
+                    <span>Create account</span>
+                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                   </>
                 )}
               </button>
 
-              {/* Sign-in Switch */}
-              <div className="text-center pt-2">
-                <p className="text-xs text-stone-500 font-light">
-                  Already hold an estate subscription?{' '}
-                  <Link to="/login" className="font-medium text-[#172418] hover:underline underline-offset-4">
-                    Access Account
-                  </Link>
-                </p>
-              </div>
+              <p className="text-center text-[15px] text-[#5E6D62]">
+                Already have an account?{' '}
+                <Link to="/login" className="font-semibold text-[#17402A] underline underline-offset-4 hover:text-[#0F2D1D]">
+                  Log in
+                </Link>
+              </p>
 
-            </form>
-          </div>
+              <p className="lg:hidden flex items-center justify-center gap-2 text-xs text-[#7C8B80]">
+                <ShieldCheck className="w-4 h-4 text-[#3E7D52]" />
+                Your details are stored with 256-bit encryption.
+              </p>
+            </div>
 
+          </form>
         </div>
 
       </div>
