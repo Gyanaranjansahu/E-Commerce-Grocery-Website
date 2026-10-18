@@ -808,7 +808,7 @@ class HandleController {
   };
 
   // ==========================================
-  // OTP OPERATIONS
+  // OTP & PASSWORD RESET OPERATIONS
   // ==========================================
   static GenerateOtp = async (req, res, next) => {
     try {
@@ -817,32 +817,40 @@ class HandleController {
         return res.status(400).json({ success: false, message: "Email is required" });
       }
 
-      const existingUser = await UserModel.findOne({ email: email.toLowerCase().trim() });
+      const cleanEmail = email.toLowerCase().trim();
+      const existingUser = await UserModel.findOne({ email: cleanEmail });
       if (!existingUser) {
-        return res.status(404).json({ success: false, message: "User not found" });
+        return res.status(404).json({
+          success: false,
+          message: "No account registered with this email address.",
+        });
       }
 
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       const hashedOtp = await bcrypt.hash(otp, 10);
 
+      // Invalidate previous OTPs for this email
+      await OtpModel.deleteMany({ email: cleanEmail });
+
       await OtpModel.create({
-        email: email.toLowerCase().trim(),
+        email: cleanEmail,
         otp: hashedOtp,
-        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
       });
 
-      try {
-        await sendEmail(email, otp);
-      } catch (mailErr) {
-        console.warn("Mail send warning:", mailErr.message);
-      }
+      // Send OTP email with Nodemailer
+      await sendEmail(cleanEmail, otp, "Password Reset Verification Code - Veda Organics");
 
       return res.status(200).json({
         success: true,
-        message: "OTP sent successfully",
+        message: "Verification code sent to your email successfully.",
       });
     } catch (error) {
-      next(error);
+      console.error("GenerateOtp Error:", error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || "Failed to send email. Please check your address and try again.",
+      });
     }
   };
 
@@ -850,45 +858,110 @@ class HandleController {
     try {
       const { email, otp } = req.body;
       if (!email || !otp) {
-        return res.status(400).json({ success: false, message: "Email and OTP are required" });
+        return res.status(400).json({
+          success: false,
+          message: "Email and verification code are required",
+        });
       }
 
-      const findOtp = await OtpModel.findOne({ email: email.toLowerCase().trim() }).sort({ createdAt: -1 });
+      const cleanEmail = email.toLowerCase().trim();
+      const findOtp = await OtpModel.findOne({ email: cleanEmail }).sort({ createdAt: -1 });
       if (!findOtp) {
-        return res.status(404).json({ success: false, message: "OTP not found or expired" });
+        return res.status(404).json({
+          success: false,
+          message: "No active verification code found. Please request a new one.",
+        });
       }
 
       if (new Date() > new Date(findOtp.expiresAt)) {
-        await OtpModel.deleteOne({ _id: findOtp._id });
-        return res.status(400).json({ success: false, message: "OTP has expired" });
+        await OtpModel.deleteMany({ email: cleanEmail });
+        return res.status(400).json({
+          success: false,
+          message: "Verification code has expired. Please request a new one.",
+        });
       }
 
-      const matching = await bcrypt.compare(otp.toString(), findOtp.otp);
+      const matching = await bcrypt.compare(otp.toString().trim(), findOtp.otp);
       if (!matching) {
-        return res.status(400).json({ success: false, message: "Invalid OTP" });
+        return res.status(400).json({
+          success: false,
+          message: "Invalid verification code. Please check and try again.",
+        });
       }
-
-      const user = await UserModel.findOne({ email: email.toLowerCase().trim() });
-      const token = jwt.sign(
-        { _id: user._id, email: user.email, role: user.role },
-        JWT_SECRET,
-        { expiresIn: "7d" }
-      );
-
-      res.cookie("token", token, {
-        httpOnly: true,
-        sameSite: "lax",
-      });
-
-      await OtpModel.deleteOne({ _id: findOtp._id });
 
       return res.status(200).json({
         success: true,
-        message: "OTP verified successfully",
-        token,
-        user,
+        message: "Verification code confirmed successfully.",
       });
     } catch (error) {
+      next(error);
+    }
+  };
+
+  static ResetPassword = async (req, res, next) => {
+    try {
+      const { email, otp, newPassword } = req.body;
+      if (!email || !otp || !newPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "Email, verification code, and new password are required.",
+        });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: "New password must be at least 6 characters long.",
+        });
+      }
+
+      const cleanEmail = email.toLowerCase().trim();
+      const user = await UserModel.findOne({ email: cleanEmail });
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "No account found with this email address.",
+        });
+      }
+
+      const findOtp = await OtpModel.findOne({ email: cleanEmail }).sort({ createdAt: -1 });
+      if (!findOtp) {
+        return res.status(400).json({
+          success: false,
+          message: "No active verification code found. Please request a new code.",
+        });
+      }
+
+      if (new Date() > new Date(findOtp.expiresAt)) {
+        await OtpModel.deleteMany({ email: cleanEmail });
+        return res.status(400).json({
+          success: false,
+          message: "Verification code has expired. Please request a new code.",
+        });
+      }
+
+      const matching = await bcrypt.compare(otp.toString().trim(), findOtp.otp);
+      if (!matching) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid verification code. Please check and try again.",
+        });
+      }
+
+      // Hash new password and update user
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      user.password = hashedPassword;
+      await user.save();
+
+      // Clear used OTPs
+      await OtpModel.deleteMany({ email: cleanEmail });
+
+      return res.status(200).json({
+        success: true,
+        message: "Password reset successfully! You can now log in with your new password.",
+      });
+    } catch (error) {
+      console.error("ResetPassword Error:", error);
       next(error);
     }
   };

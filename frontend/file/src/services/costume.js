@@ -12,6 +12,8 @@ import {
   create,
   deleteProduct,
   createOrder,
+  sendOtp,
+  resetPassword,
 } from "./api.js";
 
 export default function Costume() {
@@ -125,6 +127,26 @@ export default function Costume() {
     }
   }
 
+  async function handleSendOtp(email) {
+    setLoading(true);
+    try {
+      const res = await sendOtp(email);
+      return res;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResetPassword(email, otp, newPassword) {
+    setLoading(true);
+    try {
+      const res = await resetPassword(email, otp, newPassword);
+      return res;
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return {
     loading,
     handleLogin,
@@ -139,5 +161,7 @@ export default function Costume() {
     handleCreate,
     handleDeleteProduct,
     handleCreateOrder,
+    handleSendOtp,
+    handleResetPassword,
   };
 }

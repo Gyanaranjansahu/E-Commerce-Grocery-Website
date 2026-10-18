@@ -494,27 +494,20 @@ export default function HomePage() {
 
         <div className="grid md:grid-cols-3 rounded-3xl bg-white shadow-[0_30px_70px_-35px_rgba(11,26,18,0.45)] ring-1 ring-[#17402A]/10 divide-y md:divide-y-0 md:divide-x divide-[#17402A]/10">
 
-          {VALUES.map(({ icon: Icon, title, text }) => (
-
-            <div key={title} className="flex gap-4 p-7">
-
-              <span className="shrink-0 w-11 h-11 rounded-full bg-[#F4EBD0] text-[#7A5C14] flex items-center justify-center">
-
-                <Icon className="w-5 h-5" />
-
-              </span>
-
-              <div>
-
-                <h4 className="text-[15px] font-semibold">{title}</h4>
-
-                <p className="text-sm text-[#5E6D62] mt-1 leading-relaxed">{text}</p>
-
+          {VALUES.map((item) => {
+            const Icon = item.icon;
+            return (
+              <div key={item.title} className="flex gap-4 p-7">
+                <span className="shrink-0 w-11 h-11 rounded-full bg-[#F4EBD0] text-[#7A5C14] flex items-center justify-center">
+                  <Icon className="w-5 h-5" />
+                </span>
+                <div>
+                  <h4 className="text-[15px] font-semibold">{item.title}</h4>
+                  <p className="text-sm text-[#5E6D62] mt-1 leading-relaxed">{item.text}</p>
+                </div>
               </div>
-
-            </div>
-
-          ))}
+            );
+          })}
 
         </div>
 
@@ -906,21 +899,17 @@ export default function HomePage() {
 
               <div className="grid sm:grid-cols-2 gap-px bg-white/10 rounded-3xl overflow-hidden ring-1 ring-white/10">
 
-                {IMPACT.map(({ icon: Icon, value, label, text }) => (
-
-                  <div key={label} className="bg-[#0F2619] p-7 sm:p-8">
-
-                    <Icon className="w-6 h-6 text-[#C9A24A]" />
-
-                    <p className="display mt-6 text-4xl sm:text-[2.6rem] font-light gold-text leading-none">{value}</p>
-
-                    <p className="mt-3 text-sm font-semibold text-[#E9D8A6]">{label}</p>
-
-                    <p className="text-sm text-[#A4B8A9] mt-2 leading-relaxed">{text}</p>
-
-                  </div>
-
-                ))}
+                {IMPACT.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.label} className="bg-[#0F2619] p-7 sm:p-8">
+                      <Icon className="w-6 h-6 text-[#C9A24A]" />
+                      <p className="display mt-6 text-4xl sm:text-[2.6rem] font-light gold-text leading-none">{item.value}</p>
+                      <p className="mt-3 text-sm font-semibold text-[#E9D8A6]">{item.label}</p>
+                      <p className="text-sm text-[#A4B8A9] mt-2 leading-relaxed">{item.text}</p>
+                    </div>
+                  );
+                })}
 
               </div>
 

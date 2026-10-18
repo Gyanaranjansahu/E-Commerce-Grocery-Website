@@ -15,6 +15,8 @@ MainRouter.post("/logout", Authmiddleware, HandleController.logout);
 MainRouter.get("/getuser", Authmiddleware, HandleController.GetUser);
 MainRouter.post("/generateOtp", HandleController.GenerateOtp);
 MainRouter.post("/verify", HandleController.VerifyOtp);
+MainRouter.post("/verifyOtp", HandleController.VerifyOtp);
+MainRouter.post("/resetPassword", HandleController.ResetPassword);
 
 // ==========================================
 // ADMIN AUTH & MANAGEMENT

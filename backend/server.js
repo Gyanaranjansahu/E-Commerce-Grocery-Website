@@ -15,8 +15,18 @@ const startServer = async () => {
     await connectDb();
     console.log("✅ Database connection established");
 
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
+    });
+
+    server.on("error", (error) => {
+      if (error.code === "EADDRINUSE") {
+        console.error(`❌ Port ${PORT} is already in use. Another instance of the server is already running.`);
+        process.exit(1);
+      } else {
+        console.error("❌ Server error:", error);
+        process.exit(1);
+      }
     });
   } catch (error) {
     console.error("❌ Failed to start server:", error.message);

@@ -19,6 +19,7 @@ const AdminLogin = lazy(() => import('./Admin/admin.jsx'));
 const CartPage = lazy(() => import('./cart/cart.jsx'));
 const OrderCheckoutPage = lazy(() => import('./page/OrderCheckout.jsx'));
 const OrdersPage = lazy(() => import('./page/Orders.jsx'));
+const ForgotPassword = lazy(() => import('./page/ForgotPassword.jsx'));
 
 // Simple clean 404 fallback
 const NotFound = () => (
@@ -55,6 +56,7 @@ const App = () => {
           {/* Authentication */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<SignupUI />} />
+          <Route path="/forgot" element={<ForgotPassword />} />
 
           {/* User Protected Cart & Orders */}
           <Route path="/cart" element={
@@ -79,7 +81,7 @@ const App = () => {
             }
           />
 
-          {/* Admin Routes */}
+          {/* Admin Routes - CreateProduct strictly inside AdminDashboard */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route
             path="/admin/dashboard"
@@ -88,15 +90,10 @@ const App = () => {
                 <AdminDashboard />
               </AdminProtection>
             }
-          />
-          <Route
-            path="/_upload_Product"
-            element={
-              <AdminProtection>
-                <CreateProduct />
-              </AdminProtection>
-            }
-          />
+          >
+            <Route path="create-product" element={<CreateProduct />} />
+            <Route path="create" element={<CreateProduct />} />
+          </Route>
 
           {/* Fallback */}
           <Route path="*" element={<NotFound />} />

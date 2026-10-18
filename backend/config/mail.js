@@ -1,95 +1,140 @@
-
+import "dotenv/config";
 import nodemailer from "nodemailer";
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER, // Set in your .env file
-    pass: process.env.EMAIL_PASS, // Set in your .env file
-  },
-}
+// Create reusable transporter with connection pooling and resilient auth
+const getTransporter = () => {
+  const user = (process.env.EMAIL_USER || "cc653510@gmail.com").trim();
+  // Strip any accidental spaces from Google App Password
+  const pass = (process.env.EMAIL_PASS || "lbaz wmjx efgz qkqy").replace(/\s+/g, "");
 
-);
+  return nodemailer.createTransport({
+    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: {
+      user,
+      pass,
+    },
+    tls: {
+      rejectUnauthorized: false,
+    },
+    pool: true, // Reuse connections for high performance in production
+    maxConnections: 3,
+    maxMessages: 50,
+  });
+};
 
-function sendEmail(to, otp) {
+const transporter = getTransporter();
+
+// Verify connection configuration on server startup
+transporter.verify((error) => {
+  if (error) {
+    console.error("❌ Nodemailer SMTP Connection Error:", error.message);
+  } else {
+    console.log("✅ Nodemailer SMTP Server is ready to send emails");
+  }
+});
+
+/**
+ * Send OTP Verification / Password Reset Email
+ * @param {string} to - Recipient email address
+ * @param {string} otp - 6 digit verification code
+ * @param {string} subject - Email subject line
+ */
+export async function sendEmail(
+  to,
+  otp,
+  subject = "Password Reset Verification Code - Veda Organics"
+) {
+  const cleanTo = (to || "").trim().toLowerCase();
+  const senderEmail = (process.env.EMAIL_USER || "cc653510@gmail.com").trim();
+
   const mailOptions = {
-    from: `"Gyana" <${process.env.EMAIL_USER}>`,
-    to: to,
-    subject: "OTP Verification",
-  html: `
-  <div style="background-color: #0f172a; padding: 40px 10px; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;">
-    <div style="max-width: 440px; margin: 0 auto; background: #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); border: 1px solid #334155; text-align: center;">
-      
-      <!-- Top Glowing Animated Bar -->
-      <div style="height: 4px; background: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6, #ec4899); background-size: 200% 100%; animation: moveBar 3s linear infinite;"></div>
+    from: `"Veda Organics" <${senderEmail}>`,
+    to: cleanTo,
+    subject: subject,
+    text: `Your Veda Organics verification code is: ${otp}. It expires in 5 minutes. Do not share this code with anyone.`,
+    html: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #F7F7F5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #161B16;">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F7F7F5; padding: 40px 10px;">
+          <tr>
+            <td align="center">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 500px; background-color: #FFFFFF; border-radius: 12px; border: 1px solid #E6E4DD; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); overflow: hidden;">
+                
+                <!-- Brand Header -->
+                <tr>
+                  <td style="background-color: #1B3821; padding: 28px 32px; text-align: center;">
+                    <h1 style="margin: 0; font-family: Georgia, serif; font-size: 26px; color: #FFFFFF; letter-spacing: 2px;">VEDA</h1>
+                    <span style="font-size: 10px; color: #C4DFC7; text-transform: uppercase; letter-spacing: 3px; font-weight: 600;">Organics</span>
+                  </td>
+                </tr>
 
-      <div style="padding: 32px 24px;">
-        
-        <!-- Animated Floating Icon (SVG with Embedded CSS Keyframes) -->
-        <div style="margin-bottom: 15px;">
-          <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <style>
-              @keyframes pulse {
-                0% { transform: scale(0.95); opacity: 0.8; }
-                50% { transform: scale(1.05); opacity: 0.3; }
-                100% { transform: scale(0.95); opacity: 0.8; }
-              }
-              @keyframes float {
-                0% { transform: translateY(0px); }
-                50% { transform: translateY(-6px); }
-                100% { transform: translateY(0px); }
-              }
-              .pulse-ring { animation: pulse 2.5s infinite ease-in-out; transform-origin: center; }
-              .floating-lock { animation: float 3s infinite ease-in-out; transform-origin: center; }
-            </style>
-            <!-- Outer Pulsing Glow Circle -->
-            <circle class="pulse-ring" cx="50" cy="50" r="42" fill="#6366f1" opacity="0.2" />
-            <circle cx="50" cy="50" r="32" fill="#312e81" />
-            
-            <!-- Animated Floating Shield Icon -->
-            <g class="floating-lock" fill="#818cf8">
-              <path d="M50 28L32 36V48C32 60 40 70 50 74C60 70 68 60 68 48V36L50 28ZM50 44C52.2 44 54 45.8 54 48C54 49.5 53.2 50.8 52 51.5V57C52 58.1 51.1 59 50 59C48.9 59 48 58.1 48 57V51.5C46.8 50.8 46 49.5 46 48C46 45.8 47.8 44 50 44Z"/>
-            </g>
-          </svg>
-        </div>
+                <!-- Content Body -->
+                <tr>
+                  <td style="padding: 36px 32px 28px 32px; text-align: center;">
+                    <div style="display: inline-block; width: 48px; height: 48px; line-height: 48px; border-radius: 50%; background-color: #E8EFE8; margin-bottom: 16px; font-size: 22px;">
+                      🔐
+                    </div>
+                    <h2 style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600; color: #161B16;">
+                      Password Reset Code
+                    </h2>
+                    <p style="margin: 0 0 24px 0; font-size: 13px; line-height: 1.6; color: #6F756F;">
+                      We received a request to reset your password for your Veda Organics account. Use the 6-digit code below to set a new password.
+                    </p>
 
-        <h2 style="color: #f8fafc; font-size: 24px; font-weight: 700; margin: 0 0 6px 0; letter-spacing: -0.5px;">
-          Verification Code
-        </h2>
-        
-        <p style="color: #94a3b8; font-size: 14px; margin: 0 0 24px 0;">
-          Enter the code below to complete sign-in.
-        </p>
+                    <!-- OTP Code Display Card -->
+                    <div style="background-color: #F8FAF8; border: 2px dashed #1B3821; border-radius: 8px; padding: 18px 24px; margin: 0 auto 24px auto; display: inline-block;">
+                      <span style="font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #1B3821;">
+                        ${otp}
+                      </span>
+                    </div>
 
-        <!-- Animated Shimmer OTP Card -->
-        <div style="position: relative; background: #0f172a; border: 1px solid #475569; border-radius: 14px; padding: 20px; margin: 10px 0; overflow: hidden;">
-          <span style="font-size: 34px; font-weight: 800; color: #38bdf8; letter-spacing: 10px; font-family: 'Courier New', monospace; display: inline-block;">
-            ${otp}
-          </span>
-        </div>
+                    <!-- Expiration Notice -->
+                    <div style="margin-bottom: 24px;">
+                      <span style="display: inline-block; background-color: #FFF2F2; color: #D32F2F; font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 20px; border: 1px solid #FFCDD2;">
+                        ⏳ Valid for 5 minutes only
+                      </span>
+                    </div>
 
-        <!-- Timer Notice -->
-        <div style="margin-top: 20px; display: inline-flex; align-items: center; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); padding: 6px 14px; border-radius: 20px;">
-          <span style="color: #f87171; font-size: 12px; font-weight: 600;">
-            ⏳ Code expires in 3 minutes
-          </span>
-        </div>
-        
-        <p style="color: #64748b; font-size: 12px; margin-top: 16px;">
-          If you didn't request this code, please ignore this email.
-        </p>
-      </div>
+                    <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #9DA89D;">
+                      If you did not request a password reset, you can safely ignore this email. Your password will remain unchanged.
+                    </p>
+                  </td>
+                </tr>
 
-      <div style="background-color: #0f172a; padding: 14px; border-top: 1px solid #1e293b; font-size: 11px; color: #475569;">
-        Protected by GyanaStack Security System
-      </div>
-    </div>
-  </div>
-` // Changed from 'text' to 'html'
+                <!-- Footer Strip -->
+                <tr>
+                  <td style="background-color: #FAFAF8; border-top: 1px solid #EFECE6; padding: 20px 32px; text-align: center; font-size: 11px; color: #8C948C;">
+                    <p style="margin: 0 0 4px 0;">This is an automated security email from Veda Organics Agro Products.</p>
+                    <p style="margin: 0;">Please do not reply to this email.</p>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `,
   };
 
-  // Returning a Promise makes it compatible with async/await in your controller
-  return transporter.sendMail(mailOptions);
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Email sent successfully to ${cleanTo} (Message ID: ${info.messageId})`);
+    return info;
+  } catch (error) {
+    console.error(`❌ Failed to send email to ${cleanTo}:`, error.message);
+    throw error;
+  }
 }
 
 export default sendEmail;

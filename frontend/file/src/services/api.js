@@ -120,6 +120,45 @@ export async function getuser() {
 }
 
 // ==========================================
+// PASSWORD RECOVERY / OTP
+// ==========================================
+export async function sendOtp(email) {
+  try {
+    const response = await api.post("/api/v1/generateOtp", { email });
+    toast.success(response.data?.message || "Verification code sent to your email!");
+    return response.data;
+  } catch (err) {
+    const errorMsg = getErrorMessage(err, "Failed to send verification code");
+    toast.error(errorMsg);
+    throw new Error(errorMsg);
+  }
+}
+
+export async function verifyOtp(email, otp) {
+  try {
+    const response = await api.post("/api/v1/verifyOtp", { email, otp });
+    toast.success(response.data?.message || "Code verified successfully!");
+    return response.data;
+  } catch (err) {
+    const errorMsg = getErrorMessage(err, "Invalid or expired code");
+    toast.error(errorMsg);
+    throw new Error(errorMsg);
+  }
+}
+
+export async function resetPassword(email, otp, newPassword) {
+  try {
+    const response = await api.post("/api/v1/resetPassword", { email, otp, newPassword });
+    toast.success(response.data?.message || "Password reset successfully!");
+    return response.data;
+  } catch (err) {
+    const errorMsg = getErrorMessage(err, "Failed to reset password");
+    toast.error(errorMsg);
+    throw new Error(errorMsg);
+  }
+}
+
+// ==========================================
 // CATALOG
 // ==========================================
 export async function getItems() {
