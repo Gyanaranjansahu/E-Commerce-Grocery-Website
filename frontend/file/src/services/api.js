@@ -39,7 +39,7 @@ api.interceptors.response.use(
 
       try {
         // Attempt to generate a new Access_token using the Refresh_token cookie
-        await api.post("/refresh");
+        await api.post("/api/v1/refresh");
         // Retry the original request with the updated cookie
         return api(originalRequest);
       } catch (refreshError) {
