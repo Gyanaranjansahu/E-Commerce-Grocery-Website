@@ -24,7 +24,7 @@ const allowedOrigins = [
   "https://e-commerce-grocery-website-six.vercel.app",
   "https://e-commerce-grocery-website-tau.vercel.app",
   "https://e-commerce-grocery-website-beta.vercel.app",
-  "https://e-commerce-grocery-website-iota.vercel.app/"
+  "https://e-commerce-grocery-website-iota.vercel.app"
 ];
 
 const corsOptions = {
@@ -37,11 +37,11 @@ const corsOptions = {
       const hostname = parsedUrl.hostname;
 
       const isAllowed =
-        allowedOrigins.includes(origin) ||
+        allowedOrigins.includes(parsedUrl.origin) ||
         hostname === "localhost" ||
         hostname === "127.0.0.1" ||
-        hostname.endsWith(".vercel.app") ||
-        (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL);
+        (process.env.FRONTEND_URL &&
+          new URL(process.env.FRONTEND_URL).origin === parsedUrl.origin);
 
       if (isAllowed) {
         return callback(null, true);
@@ -65,9 +65,8 @@ const corsOptions = {
   optionsSuccessStatus: 200, // Legacy browsers support
 };
 
-// Mount CORS and explicit preflight handler
+// The CORS middleware also handles preflight OPTIONS requests.
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
 
 // =========================================================================
 // 3. RATE LIMITING
