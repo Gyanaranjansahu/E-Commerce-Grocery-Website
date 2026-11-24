@@ -14,7 +14,7 @@ import axios from "axios";
 // otherwise defaults to the deployed Vercel backend.
 const API_BASE_URL = 
   import.meta.env.VITE_API_URL || 
-  "https://e-commerce-grocery-website-5m9l.vercel.app/api/v1";
+  "https://e-commerce-grocery-website-5m9l.vercel.app";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -80,7 +80,7 @@ export async function signup(data) {
       form.append("profileImage", profileImage);
     }
 
-    const response = await api.post("/register", form, {
+    const response = await api.post("/api/v1/register", form, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
@@ -95,7 +95,7 @@ export async function Login(credentials, maybePassword) {
     const payload = typeof credentials === "object" && credentials !== null
       ? credentials
       : { email: credentials, password: maybePassword };
-    const response = await api.post("/login", payload);
+    const response = await api.post("/api/v1/login", payload);
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Login failed"));
@@ -105,7 +105,7 @@ export async function Login(credentials, maybePassword) {
 // 3. Get Authenticated User Details
 export async function getuser() {
   try {
-    const response = await api.get("/getuser");
+    const response = await api.get("/api/v1/getuser");
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Failed to fetch user"));
@@ -115,7 +115,7 @@ export async function getuser() {
 // 4. Refresh Access Token explicitly if needed
 export async function refreshToken() {
   try {
-    const response = await api.post("/refresh");
+    const response = await api.post("/api/v1/refresh");
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Session expired. Please log in again."));
@@ -125,7 +125,7 @@ export async function refreshToken() {
 // 5. Logout User (clears backend authentication cookies)
 export async function logout() {
   try {
-    const response = await api.post("/logout");
+    const response = await api.post("/api/v1/logout");
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Logout failed"));
@@ -142,7 +142,7 @@ export async function sendOtp(emailOrPayload) {
     const payload = typeof emailOrPayload === "object" && emailOrPayload !== null
       ? emailOrPayload
       : { email: emailOrPayload };
-    const response = await api.post("/forgetPassword", payload);
+    const response = await api.post("/api/v1/forgetPassword", payload);
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Failed to send OTP code"));
@@ -155,7 +155,7 @@ export async function verifyOtp(emailOrPayload, maybeOtp) {
     const payload = typeof emailOrPayload === "object" && emailOrPayload !== null
       ? emailOrPayload
       : { email: emailOrPayload, otp: maybeOtp };
-    const response = await api.post("/verify", payload);
+    const response = await api.post("/api/v1/verify", payload);
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Invalid or expired OTP"));
@@ -168,7 +168,7 @@ export async function changePassword(emailOrPayload, maybePassword) {
     const payload = typeof emailOrPayload === "object" && emailOrPayload !== null
       ? emailOrPayload
       : { email: emailOrPayload, newPassword: maybePassword };
-    const response = await api.patch("/changePassword", payload);
+    const response = await api.patch("/api/v1/changePassword", payload);
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Failed to update password"));
@@ -182,7 +182,7 @@ export async function changePassword(emailOrPayload, maybePassword) {
 // 9. Fetch all products
 export async function getItems() {
   try {
-    const response = await api.get("/getItem");
+    const response = await api.get("/api/v1/getItem");
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Failed to fetch products"));
@@ -192,7 +192,7 @@ export async function getItems() {
 // 10. Add item to cart
 export async function addtoCart(productId) {
   try {
-    const response = await api.post("/addtoCart", { productId });
+    const response = await api.post("/api/v1/addtoCart", { productId });
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Failed to add item to cart"));
@@ -202,7 +202,7 @@ export async function addtoCart(productId) {
 // 11. View cart items
 export async function Getcart() {
   try {
-    const response = await api.get("/cartItem");
+    const response = await api.get("/api/v1/cartItem");
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Failed to load cart"));
@@ -212,7 +212,7 @@ export async function Getcart() {
 // 12. Update quantity in cart
 export async function Cartupdate(productId, quantity) {
   try {
-    const response = await api.put("/updateCart", { productId, quantity });
+    const response = await api.put("/api/v1/updateCart", { productId, quantity });
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Failed to update cart quantity"));
@@ -222,7 +222,7 @@ export async function Cartupdate(productId, quantity) {
 // 13. Remove item from cart
 export async function deleteItem(productId) {
   try {
-    const response = await api.delete("/removeItem", { data: { productId } });
+    const response = await api.delete("/api/v1/removeItem", { data: { productId } });
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Failed to remove item from cart"));
@@ -232,7 +232,7 @@ export async function deleteItem(productId) {
 // 14. Toggle item in wishlist
 export async function toogleWishlist(itemId) {
   try {
-    const response = await api.post("/wishlist", { productId: itemId });
+    const response = await api.post("/api/v1/wishlist", { productId: itemId });
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Failed to update wishlist"));
@@ -242,7 +242,7 @@ export async function toogleWishlist(itemId) {
 // 15. Fetch user wishlist
 export async function getWishList() {
   try {
-    const response = await api.get("/wishItem");
+    const response = await api.get("/api/v1/wishItem");
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Failed to fetch wishlist"));
@@ -263,7 +263,7 @@ export async function create(productData) {
       form.append("image", productData.image);
     }
 
-    const response = await api.post("/createProduct", form);
+    const response = await api.post("/api/v1/createProduct", form);
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Failed to create product"));
@@ -273,7 +273,7 @@ export async function create(productData) {
 // 17. Get Admin Details
 export async function getAdmin() {
   try {
-    const response = await api.get("/admin_details");
+    const response = await api.get("/api/v1/admin_details");
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Failed to verify admin"));
@@ -283,7 +283,7 @@ export async function getAdmin() {
 // 18. Orders: Place new order
 export async function createOrder(orderData) {
   try {
-    const response = await api.post("/order", orderData);
+    const response = await api.post("/api/v1/order", orderData);
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Failed to place order"));
@@ -293,7 +293,7 @@ export async function createOrder(orderData) {
 // 19. Orders: Get authenticated user's orders
 export async function getMyOrders() {
   try {
-    const response = await api.get("/myOrders");
+    const response = await api.get("/api/v1/myOrders");
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Failed to load orders"));
@@ -303,7 +303,7 @@ export async function getMyOrders() {
 // 20. Admin: Get all customer orders
 export async function getAllOrders() {
   try {
-    const response = await api.get("/admin/orders");
+    const response = await api.get("/api/v1/admin/orders");
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Failed to fetch all orders"));
@@ -313,7 +313,7 @@ export async function getAllOrders() {
 // 21. Admin: Update status of an order
 export async function updateOrderStatus(orderId, orderStatus) {
   try {
-    const response = await api.put("/admin/orderStatus", { orderId, orderStatus });
+    const response = await api.put("/api/v1/admin/orderStatus", { orderId, orderStatus });
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Failed to update order status"));
@@ -323,7 +323,7 @@ export async function updateOrderStatus(orderId, orderStatus) {
 // 22. Admin: Get all registered customers
 export async function getAllUsers() {
   try {
-    const response = await api.get("/admin/users");
+    const response = await api.get("/api/v1/admin/users");
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Failed to fetch users"));
@@ -333,7 +333,7 @@ export async function getAllUsers() {
 // 23. Admin: Delete product
 export async function deleteProduct(productId) {
   try {
-    const response = await api.delete("/admin/deleteProduct", { data: { productId } });
+    const response = await api.delete("/api/v1/admin/deleteProduct", { data: { productId } });
     return response.data;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Failed to delete product"));
