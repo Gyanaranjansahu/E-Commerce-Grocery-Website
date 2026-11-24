@@ -21,11 +21,7 @@ app.use(limiter);
 
 // CORS Configuration
 app.use(cors({
-    origin: [
-        "http://localhost:5173",
-       "https://e-commerce-grocery-website-six.vercel.app"
-        // Add your new frontend Vercel URL here
-    ],
+    origin:"https://e-commerce-grocery-website-six.vercel.app",
     credentials: true
 }));
 
