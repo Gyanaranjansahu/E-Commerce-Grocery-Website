@@ -35,9 +35,14 @@ const corsOptions = {
     try {
       const parsedUrl = new URL(origin);
       const hostname = parsedUrl.hostname;
+      const isAllowedVercelPreview =
+        /^https:\/\/e-commerce-grocery-website-[a-z0-9]+-gyanaranjansahus-projects\.vercel\.app$/.test(
+          parsedUrl.origin
+        );
 
       const isAllowed =
         allowedOrigins.includes(parsedUrl.origin) ||
+        isAllowedVercelPreview ||
         hostname === "localhost" ||
         hostname === "127.0.0.1" ||
         (process.env.FRONTEND_URL &&
