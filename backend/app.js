@@ -21,14 +21,10 @@ connectDb();
 // attached to EVERY request, including preflight OPTIONS and error responses.
 // =========================================================================
 const allowedOrigins = [
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-  "http://localhost:5174",
-  "http://127.0.0.1:5174",
-  "http://localhost:3000",
   "https://e-commerce-grocery-website-six.vercel.app",
   "https://e-commerce-grocery-website-tau.vercel.app",
   "https://e-commerce-grocery-website-beta.vercel.app",
+  "https://e-commerce-grocery-website-iota.vercel.app/"
 ];
 
 const corsOptions = {
