@@ -1,37 +1,51 @@
-import dotenv from "dotenv/config"
-import express from "express"
-import connectDb from "./config/db.js"
-import MainRouter from "./router/Router.js"
-import GlobalError from "./Error.js" // Fixed typo in import
-import cookieParser from "cookie-parser"
-import cors from "cors"
-import {rateLimit} from "express-rate-limit"
+import "dotenv/config";
+import express from "express";
+// import connectDb from "./config/db.js";
+import MainRouter from "./router/Router.js";
+import GlobalError from "./Error.js";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import { rateLimit } from "express-rate-limit";
 
-const app = express()
+const app = express();
 
-// Rate limiting
+// Rate Limiting
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100// limit each IP to 100 requests per windowMs
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false
 });
+
 app.use(limiter);
 
-await connectDb()
+// CORS Configuration
 app.use(cors({
-    origin: ["http://localhost:5173","https://e-commerce-grocery-website-beta.vercel.app"],
-    secure:false,
-    credentials:true
-}))
-app.use(express.json())
+    origin: [
+        "http://localhost:5173",
+        "https://e-commerce-grocery-website-beta.vercel.app"
+        // Add your new frontend Vercel URL here
+    ],
+    credentials: true
+}));
+
+// Middleware
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser())
- 
-app.get("/",(req,res)=>{
-    message:"good health"
-})
-app.use("/api/v1", MainRouter)
+app.use(cookieParser());
+
+// Health Check
+app.get("/", (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: "Server is healthy"
+    });
+});
+
+// API Routes
+app.use("/api/v1", MainRouter);
 
 // Global Error Handler
-app.use(GlobalError)
+app.use(GlobalError);
 
-export default app
+export default app;
