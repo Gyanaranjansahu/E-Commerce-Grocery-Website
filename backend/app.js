@@ -25,7 +25,10 @@ app.use(cors({
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser())
-
+ 
+app.get("/",(req,res)=>{
+    message:"good health"
+})
 app.use("/api/v1", MainRouter)
 
 // Global Error Handler
