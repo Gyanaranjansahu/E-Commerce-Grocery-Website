@@ -10,8 +10,14 @@ import axios from "axios";
 // 3. Clear, simple async functions that return the response payload or throw a readable error.
 // =========================================================================
 
+// Dynamically resolve API URL: uses VITE_API_URL env variable if present,
+// otherwise defaults to the deployed Vercel backend.
+const API_BASE_URL = 
+  import.meta.env.VITE_API_URL || 
+  "https://e-commerce-grocery-website-5m9l.vercel.app/api/v1";
+
 const api = axios.create({
-  baseURL: "https://e-commerce-grocery-website-5m9l.vercel.app/api/v1",
+  baseURL: API_BASE_URL,
   withCredentials: true,
 });
 

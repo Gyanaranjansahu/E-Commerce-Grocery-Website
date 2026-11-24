@@ -1,47 +1,110 @@
 import "dotenv/config";
 import express from "express";
-// import connectDb from "./config/db.js";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import { rateLimit } from "express-rate-limit";
+import connectDb from "./config/db.js";
 import MainRouter from "./router/Router.js";
 import GlobalError from "./Error.js";
-import cookieParser from "cookie-parser";
-import cors from "cors";
-import { rateLimit } from "express-rate-limit";
 
 const app = express();
 
-// Rate Limiting
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    standardHeaders: true,
-    legacyHeaders: false
-});
+// =========================================================================
+// 1. DATABASE CONNECTION
+// Connects to MongoDB Atlas using custom DNS servers (8.8.8.8) to resolve SRV records
+// =========================================================================
+connectDb();
 
+// =========================================================================
+// 2. PRODUCTION & DEVELOPMENT CORS CONFIGURATION
+// Placed before all other middlewares and routes to ensure CORS headers are
+// attached to EVERY request, including preflight OPTIONS and error responses.
+// =========================================================================
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:5174",
+  "http://127.0.0.1:5174",
+  "http://localhost:3000",
+  "https://e-commerce-grocery-website-six.vercel.app",
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow non-browser requests (Postman, curl, backend-to-backend)
+    if (!origin) return callback(null, true);
+
+    try {
+      const parsedUrl = new URL(origin);
+      const hostname = parsedUrl.hostname;
+
+      const isAllowed =
+        allowedOrigins.includes(origin) ||
+        hostname === "localhost" ||
+        hostname === "127.0.0.1" ||
+        hostname.endsWith(".vercel.app") ||
+        (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL);
+
+      if (isAllowed) {
+        return callback(null, true);
+      } else {
+        console.warn(`[CORS Blocked] Origin not allowed: ${origin}`);
+        return callback(new Error(`CORS blocked for origin: ${origin}`));
+      }
+    } catch (err) {
+      return callback(new Error("Invalid Origin header"));
+    }
+  },
+  credentials: true, // Required for Access_token & Refresh_token cookies
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+  optionsSuccessStatus: 200, // Legacy browsers support
+};
+
+// Mount CORS and explicit preflight handler
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
+// =========================================================================
+// 3. RATE LIMITING
+// Must be registered AFTER cors so that any 429 response includes CORS headers!
+// =========================================================================
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // Relaxed limit to avoid false-positive blocking in dev
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.method === "OPTIONS", // Never throttle preflight checks!
+  message: {
+    success: false,
+    message: "Rate limit exceeded. Please wait 15 minutes before retrying.",
+  },
+});
 app.use(limiter);
 
-// CORS Configuration
-app.use(cors({
-    origin:"https://e-commerce-grocery-website-six.vercel.app",
-    credentials: true
-}));
-
-// Middleware
+// =========================================================================
+// 4. REQUEST PARSERS
+// =========================================================================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Health Check
+// =========================================================================
+// 5. HEALTH CHECK & API ROUTES
+// =========================================================================
 app.get("/", (req, res) => {
-    res.status(200).json({
-        success: true,
-        message: "Server is healthy"
-    });
+  res.status(200).json({
+    success: true,
+    message: "Server is healthy and running",
+    timestamp: new Date().toISOString(),
+  });
 });
 
-// API Routes
 app.use("/api/v1", MainRouter);
 
-// Global Error Handler
+// =========================================================================
+// 6. GLOBAL ERROR HANDLER
+// =========================================================================
 app.use(GlobalError);
 
 export default app;
