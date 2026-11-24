@@ -1,140 +1,220 @@
-import "dotenv/config";
+
 import nodemailer from "nodemailer";
 
-// Create reusable transporter with connection pooling and resilient auth
-const getTransporter = () => {
-  const user = (process.env.EMAIL_USER || "cc653510@gmail.com").trim();
-  // Strip any accidental spaces from Google App Password
-  const pass = (process.env.EMAIL_PASS || "lbaz wmjx efgz qkqy").replace(/\s+/g, "");
-
-  return nodemailer.createTransport({
-    service: "gmail",
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: {
-      user,
-      pass,
-    },
-    tls: {
-      rejectUnauthorized: false,
-    },
-    pool: true, // Reuse connections for high performance in production
-    maxConnections: 3,
-    maxMessages: 50,
-  });
-};
-
-const transporter = getTransporter();
-
-// Verify connection configuration on server startup
-transporter.verify((error) => {
-  if (error) {
-    console.error("❌ Nodemailer SMTP Connection Error:", error.message);
-  } else {
-    console.log("✅ Nodemailer SMTP Server is ready to send emails");
-  }
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
 });
 
-/**
- * Send OTP Verification / Password Reset Email
- * @param {string} to - Recipient email address
- * @param {string} otp - 6 digit verification code
- * @param {string} subject - Email subject line
- */
-export async function sendEmail(
-  to,
-  otp,
-  subject = "Password Reset Verification Code - Veda Organics"
-) {
-  const cleanTo = (to || "").trim().toLowerCase();
-  const senderEmail = (process.env.EMAIL_USER || "cc653510@gmail.com").trim();
-
+function sendEmail(to, otp) {
   const mailOptions = {
-    from: `"Veda Organics" <${senderEmail}>`,
-    to: cleanTo,
-    subject: subject,
-    text: `Your Veda Organics verification code is: ${otp}. It expires in 5 minutes. Do not share this code with anyone.`,
+    from: `"VEDA ORGANIC🍎" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: "Verify Your Email - OTP",
+
     html: `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${subject}</title>
-      </head>
-      <body style="margin: 0; padding: 0; background-color: #F7F7F5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #161B16;">
-        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F7F7F5; padding: 40px 10px;">
-          <tr>
-            <td align="center">
-              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 500px; background-color: #FFFFFF; border-radius: 12px; border: 1px solid #E6E4DD; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); overflow: hidden;">
-                
-                <!-- Brand Header -->
-                <tr>
-                  <td style="background-color: #1B3821; padding: 28px 32px; text-align: center;">
-                    <h1 style="margin: 0; font-family: Georgia, serif; font-size: 26px; color: #FFFFFF; letter-spacing: 2px;">VEDA</h1>
-                    <span style="font-size: 10px; color: #C4DFC7; text-transform: uppercase; letter-spacing: 3px; font-weight: 600;">Organics</span>
-                  </td>
-                </tr>
+      <div style="
+        margin: 0;
+        padding: 35px 15px;
+        background: #f3f8f2;
+        font-family: Arial, Helvetica, sans-serif;
+      ">
 
-                <!-- Content Body -->
-                <tr>
-                  <td style="padding: 36px 32px 28px 32px; text-align: center;">
-                    <div style="display: inline-block; width: 48px; height: 48px; line-height: 48px; border-radius: 50%; background-color: #E8EFE8; margin-bottom: 16px; font-size: 22px;">
-                      🔐
-                    </div>
-                    <h2 style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600; color: #161B16;">
-                      Password Reset Code
-                    </h2>
-                    <p style="margin: 0 0 24px 0; font-size: 13px; line-height: 1.6; color: #6F756F;">
-                      We received a request to reset your password for your Veda Organics account. Use the 6-digit code below to set a new password.
-                    </p>
+        <div style="
+          max-width: 500px;
+          margin: auto;
+          background: #ffffff;
+          border-radius: 14px;
+          overflow: hidden;
+          border: 1px solid #e5eee2;
+        ">
 
-                    <!-- OTP Code Display Card -->
-                    <div style="background-color: #F8FAF8; border: 2px dashed #1B3821; border-radius: 8px; padding: 18px 24px; margin: 0 auto 24px auto; display: inline-block;">
-                      <span style="font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #1B3821;">
-                        ${otp}
-                      </span>
-                    </div>
+          <!-- Header -->
+          <div style="
+            padding: 24px;
+            text-align: center;
+            background: #ffffff;
+          ">
+            <h2 style="
+              margin: 0;
+              color: #166534;
+              font-size: 25px;
+              font-weight: 800;
+            ">
+              VEDA ORGANIC
+            </h2>
 
-                    <!-- Expiration Notice -->
-                    <div style="margin-bottom: 24px;">
-                      <span style="display: inline-block; background-color: #FFF2F2; color: #D32F2F; font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 20px; border: 1px solid #FFCDD2;">
-                        ⏳ Valid for 5 minutes only
-                      </span>
-                    </div>
+            <p style="
+              margin: 7px 0 0;
+              color: #84a98c;
+              font-size: 11px;
+              letter-spacing: 2px;
+              font-weight: 600;
+            ">
+              FRESHNESS DELIVERED TO YOUR DOOR
+            </p>
+          </div>
 
-                    <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #9DA89D;">
-                      If you did not request a password reset, you can safely ignore this email. Your password will remain unchanged.
-                    </p>
-                  </td>
-                </tr>
+          <!-- Grocery Image -->
+          <div style="padding: 0;">
+            <img
+              src=""https://images.unsplash.com/photo-1542838132-92c53300491e";"
+              alt="Fresh fruits and vegetables"
+              style="
+                display: block;
+                width: 100%;
+                height: 220px;
+                object-fit: cover;
+                border: 0;
+              "
+            />
+          </div>
 
-                <!-- Footer Strip -->
-                <tr>
-                  <td style="background-color: #FAFAF8; border-top: 1px solid #EFECE6; padding: 20px 32px; text-align: center; font-size: 11px; color: #8C948C;">
-                    <p style="margin: 0 0 4px 0;">This is an automated security email from Veda Organics Agro Products.</p>
-                    <p style="margin: 0;">Please do not reply to this email.</p>
-                  </td>
-                </tr>
+          <!-- Main Content -->
+          <div style="
+            padding: 35px 30px;
+            text-align: center;
+          ">
 
-              </table>
-            </td>
-          </tr>
-        </table>
-      </body>
-      </html>
+            <div style="
+              width: 55px;
+              height: 55px;
+              margin: 0 auto 18px;
+              background: #ecfdf3;
+              border-radius: 50%;
+              line-height: 55px;
+              font-size: 27px;
+            ">
+              🥬
+            </div>
+
+            <h1 style="
+              margin: 0 0 12px;
+              color: #14532d;
+              font-size: 26px;
+            ">
+              Verify Your Email
+            </h1>
+
+            <p style="
+              margin: 0 auto 28px;
+              color: #64748b;
+              font-size: 14px;
+              line-height: 1.8;
+            ">
+              Welcome! We're happy to have you with us.
+              Please use the verification code below
+              to verify your email address.
+            </p>
+
+            <!-- OTP Box -->
+            <div style="
+              padding: 25px 15px;
+              background: #f0fdf4;
+              border: 1px dashed #86efac;
+              border-radius: 12px;
+            ">
+
+              <p style="
+                margin: 0 0 12px;
+                color: #15803d;
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 2px;
+              ">
+                YOUR VERIFICATION CODE
+              </p>
+
+              <div style="
+                color: #166534;
+                font-size: 36px;
+                font-weight: 800;
+                letter-spacing: 9px;
+                font-family: monospace;
+              ">
+                ${otp}
+              </div>
+
+            </div>
+
+            <!-- Expiry Notice -->
+            <div style="
+              margin-top: 20px;
+              padding: 13px;
+              background: #fff7ed;
+              border-radius: 8px;
+            ">
+              <p style="
+                margin: 0;
+                color: #c2410c;
+                font-size: 12px;
+                font-weight: 600;
+              ">
+                ⏳ This verification code expires in 3 minutes.
+              </p>
+            </div>
+
+            <p style="
+              margin: 25px 0 0;
+              color: #94a3b8;
+              font-size: 12px;
+              line-height: 1.7;
+            ">
+              If you didn't request this code,
+              please ignore this email.
+            </p>
+
+          </div>
+
+          <!-- Footer -->
+          <div style="
+            padding: 23px 20px;
+            background: #f0fdf4;
+            border-top: 1px solid #dcfce7;
+            text-align: center;
+          ">
+
+            <p style="
+              margin: 0 0 8px;
+              color: #166534;
+              font-size: 13px;
+              font-weight: 700;
+            ">
+              GyanaStack - Freshness You Can Trust
+            </p>
+
+            <p style="
+              margin: 0;
+              color: #86a58d;
+              font-size: 11px;
+              line-height: 1.6;
+            ">
+              Fresh groceries, delivered with care.
+              <br />
+              This is an automated email. Please do not reply.
+            </p>
+
+          </div>
+
+        </div>
+
+        <p style="
+          margin: 18px auto 0;
+          color: #94a3b8;
+          font-size: 11px;
+          text-align: center;
+        ">
+          © ${new Date().getFullYear()} Grocery. All rights reserved.
+        </p>
+
+      </div>
     `,
   };
 
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Email sent successfully to ${cleanTo} (Message ID: ${info.messageId})`);
-    return info;
-  } catch (error) {
-    console.error(`❌ Failed to send email to ${cleanTo}:`, error.message);
-    throw error;
-  }
+  return transporter.sendMail(mailOptions);
 }
 
 export default sendEmail;

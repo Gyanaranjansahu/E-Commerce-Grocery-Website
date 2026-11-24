@@ -1,11 +1,7 @@
-function verifyAdmin(req, res, next) {
-  if (!req.user || req.user.role !== "admin") {
-    return res.status(403).json({
-      success: false,
-      message: "Access denied. Administrator privileges required.",
-    });
-  }
-  next();
+function verifyAdmin(req,res,next){
+    if(req.user.role!=="admin"){
+        return res.status(403).json({message:"unauthorized"})
+    }
+    next()
 }
-
-export default verifyAdmin;
+export default verifyAdmin

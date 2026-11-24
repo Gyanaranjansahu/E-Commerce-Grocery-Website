@@ -1,107 +1,58 @@
-import React, { Suspense, lazy } from 'react';
-import { Route, Routes, Navigate } from 'react-router-dom';
-import GroceryLoader from './components/Loading.jsx';
-import Protection from './Router/Protective.jsx';
-import AdminProtection from './Router/adminProtection.jsx';
-import OurStory from './page/OurStory.jsx';
-import LabPurityReport from './page/LabPurityReport.jsx';
-import WishlistPage from './wishlist/wishlist.jsx';
-import CreateProduct from './Admin/CreateProduct.jsx';
-import AdminDashboard from './Admin/adminDashboard.jsx';
-import { Toaster } from 'sonner';
+import React, { Suspense, lazy } from 'react'
+import { Route, Routes } from 'react-router-dom'
+import GroceryLoader from './components/Loading.jsx'
+import Protection from '../Router/Protective.jsx'
+import OurStory from './page/OurStory.jsx'
+import LabPurityReport from './page/LabPurityReport.jsx'
+import WishlistPage from './wishlist/wishlist.jsx'
+import CreateProduct from './Admin/CreateProduct.jsx'
+// import CartPage from '../cart/cart.jsx'
 
-// Lazy-loaded route components
-const HomePage = lazy(() => import('./page/Home.jsx'));
-const SignupUI = lazy(() => import('./page/signup.jsx'));
-const Login = lazy(() => import('./page/login.jsx'));
-const CollectionPage = lazy(() => import('./page/CollectionPage.jsx'));
-const AdminLogin = lazy(() => import('./Admin/admin.jsx'));
-const CartPage = lazy(() => import('./cart/cart.jsx'));
-const OrderCheckoutPage = lazy(() => import('./page/OrderCheckout.jsx'));
-const OrdersPage = lazy(() => import('./page/Orders.jsx'));
-const ForgotPassword = lazy(() => import('./page/ForgotPassword.jsx'));
-
-// Simple clean 404 fallback
-const NotFound = () => (
-  <div className="min-h-screen bg-[#FBFBFA] flex flex-col items-center justify-center p-6 text-center">
-    <span className="text-4xl font-serif font-bold text-stone-900 mb-2">404</span>
-    <h2 className="text-lg font-serif font-semibold text-stone-800 mb-2">Harvest Page Not Found</h2>
-    <p className="text-xs text-stone-500 mb-6 max-w-sm">The route you requested does not exist or has been relocated to another section.</p>
-    <a href="/" className="px-5 py-2.5 bg-[#1B3821] text-white text-xs font-semibold uppercase tracking-wider rounded-md hover:bg-[#122817] transition">
-      Back to Home
-    </a>
-  </div>
-);
-
+// Lazy-loaded route components (code-split into separate bundles)
+const HomePage = lazy(() => import('./page/Home.jsx'))
+const SignupUI = lazy(() => import('./page/signup.jsx'))
+const Login = lazy(() => import('./page/login.jsx'))
+const CollectionPage = lazy(() => import('./page/CollectionPage.jsx'))
+const AdminLogin = lazy(() => import('./Admin/admin.jsx'))
+const CartPage=lazy(()=>import ("./cart/cart.jsx"))
+const ForgotPassword = lazy(() => import('./page/ForgotPassword.jsx'))
+const Logout = lazy(() => import('./page/Logout.jsx'))
+const Terms = lazy(() => import('./page/Terms.jsx'))
 const App = () => {
   return (
     <div>
       <Suspense fallback={<GroceryLoader />}>
         <Routes>
-          {/* Public Storefront */}
           <Route path="/" element={<HomePage />} />
-          <Route path="/shop" element={
-            <Protection>
-              <CollectionPage />
-            </Protection>
-          } />
-          <Route path="/our-story" element={<OurStory />} />
-          <Route path="/purity" element={<LabPurityReport />} />
-          <Route path="/wishlist" element={
-            <Protection>
-              <WishlistPage />
-            </Protection>
-          } />
-
-          {/* Authentication */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<SignupUI />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/terms-and-conditions" element={<Terms />} />
+          <Route path="/terms-of-condition" element={<Terms />} />
           <Route path="/forgot" element={<ForgotPassword />} />
-
-          {/* User Protected Cart & Orders */}
-          <Route path="/cart" element={
-            <Protection>
-              <CartPage />
-            </Protection>
-          } />
+          <Route path="/reset-password" element={<ForgotPassword />} />
+          <Route path="/change-password" element={<ForgotPassword />} />
+          <Route path="/logout" element={<Logout />} />
           <Route
-            path="/order"
+            path="/shop"
             element={
               <Protection>
-                <OrderCheckoutPage />
+                <CollectionPage />
               </Protection>
             }
           />
-          <Route
-            path="/orders"
-            element={
-              <Protection>
-                <OrdersPage />
-              </Protection>
-            }
-          />
+          <Route path="/Admin_login" element={<AdminLogin />} />
 
-          {/* Admin Routes - CreateProduct strictly inside AdminDashboard */}
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route
-            path="/admin/dashboard"
-            element={
-              <AdminProtection>
-                <AdminDashboard />
-              </AdminProtection>
-            }
-          >
-            <Route path="create-product" element={<CreateProduct />} />
-            <Route path="create" element={<CreateProduct />} />
-          </Route>
+          <Route path='/cart' element={<CartPage/>}/>
 
-          {/* Fallback */}
-          <Route path="*" element={<NotFound />} />
+          <Route path='/our-story' element={<OurStory/>}/>
+          <Route path='/purity' element={<LabPurityReport/>}/>
+          <Route path='/wishlist' element={<WishlistPage/>}/>
+          <Route path='/_upload_Product' element={<CreateProduct/>}/>
         </Routes>
       </Suspense>
-      <Toaster position="top-right" richColors closeButton theme="light" visibleToasts={3} />
     </div>
-  );
-};
+  )
+}
 
-export default App;
+export default App

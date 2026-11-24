@@ -1,46 +1,36 @@
+
 import jwt from "jsonwebtoken";
-import listed from "../model/Blacklist.js";
 
 const Authmiddleware = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
-    const token =
-      req.cookies?.token ||
-      (authHeader && authHeader.startsWith("Bearer ")
-        ? authHeader.split(" ")[1]
-        : authHeader);
+    const token = req.cookies.Access_token;
 
     if (!token) {
       return res.status(401).json({
-        success: false,
-        message: "Unauthorized: No token provided",
+        message: "Unauthorized"
       });
     }
 
-    const is_blacklist = await listed.findOne({ token: token });
-    if (is_blacklist) {
-      return res.status(401).json({
-        success: false,
-        message: "Session expired, please log in again",
-      });
-    }
-
-    const secret = process.env.JWT_SECRET || "hifdub.089hjkfmol";
-    const decoded = jwt.verify(token, secret);
-    if (!decoded) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized: Invalid token",
-      });
-    }
+    const decoded = jwt.verify(
+      token,
+      process.env.ACCESS_SECRET_TOKEN
+    );
 
     req.user = decoded;
+    // Ensure both id and _id are available on req.user for compatibility
+    if (decoded && decoded.id && !decoded._id) {
+      req.user._id = decoded.id;
+    }
+    if (decoded && decoded._id && !decoded.id) {
+      req.user.id = decoded._id;
+    }
+
     next();
+
   } catch (err) {
     return res.status(401).json({
-      success: false,
-      message: "Unauthorized: Invalid or expired token",
-      error: err.message,
+      message: "Unauthorized",
+      success: false
     });
   }
 };

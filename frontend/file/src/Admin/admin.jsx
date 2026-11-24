@@ -1,42 +1,62 @@
-import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import Costume from '../services/costume.js';
-import { GlobalContext } from '../context/Usecontext.jsx';
+import { useApp } from '../context/Usecontext.jsx';
+import { useNavigate } from 'react-router-dom';
+import { AlertCircle } from 'lucide-react';
+
+// =========================================================================
+// APPROACH:
+// Admin Login Component:
+// 1. Accepts email & password credentials.
+// 2. Uses `handleLogin` to call `POST /adminLogin` (which issues Access & Refresh cookies).
+// 3. Immediately triggers `curr_user()` and `admins()` to verify admin privileges.
+// 4. On successful verification, redirects directly to the admin dashboard or product upload.
+// =========================================================================
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const { admins, curr_user } = useContext(GlobalContext);
+  const { loading, handleLogin } = Costume();
+  const { curr_user, admins } = useApp();
 
   const [data, setData] = useState({
     email: '',
     password: '',
   });
+  const [errorMessage, setErrorMessage] = useState('');
 
   const { email, password } = data;
-  const { loading, handleLogin } = Costume();
 
   function handleItem(e) {
     const { name, value } = e.target;
+    setErrorMessage('');
     setData((prev) => ({ ...prev, [name]: value }));
   }
 
   async function handleForm(e) {
     e.preventDefault();
+    setErrorMessage('');
+
     try {
       const res = await handleLogin(data);
       if (res) {
-        if (admins) await admins();
-        if (curr_user) await curr_user();
-        navigate('/admin/dashboard', { replace: true });
+        // Refresh authenticated user and admin details in global context
+        const user = await curr_user();
+        await admins();
+
+        if (user?.role === 'admin') {
+          navigate('/_upload_Product', { replace: true });
+        } else {
+          navigate('/', { replace: true });
+        }
       }
     } catch (err) {
-      console.error('Login failed:', err);
+      setErrorMessage(err.message || 'Invalid admin credentials');
     }
   }
 
   return (
     <div className="min-h-[100dvh] w-full bg-[#0b0f19] text-slate-100 flex items-center justify-center p-4 sm:p-6 selection:bg-indigo-500 selection:text-white relative overflow-hidden">
-      {/* Responsive background glow effects */}
+      {/* Background glow effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden flex items-center justify-center">
         <div className="absolute -top-24 -left-24 sm:-top-40 sm:-left-40 w-64 h-64 sm:w-96 sm:h-96 bg-indigo-500/10 rounded-full blur-[90px] sm:blur-[120px]" />
         <div className="absolute -bottom-24 -right-24 sm:-bottom-40 sm:-right-40 w-64 h-64 sm:w-96 sm:h-96 bg-violet-500/10 rounded-full blur-[90px] sm:blur-[120px]" />
@@ -47,6 +67,13 @@ const AdminLogin = () => {
           <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Admin Login</h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">Enter your credentials to access the portal</p>
         </div>
+
+        {errorMessage && (
+          <div className="mb-4 p-3 bg-red-950/50 border border-red-500/50 text-red-200 text-xs rounded-xl flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+        )}
 
         <form onSubmit={handleForm} className="space-y-4 sm:space-y-5">
           <div>
@@ -84,9 +111,11 @@ const AdminLogin = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 py-2.5 sm:py-3 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-medium text-sm rounded-xl shadow-lg shadow-indigo-500/25 transition duration-200 cursor-pointer active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`w-full mt-2 py-2.5 sm:py-3 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-medium text-sm rounded-xl shadow-lg shadow-indigo-500/25 transition duration-200 cursor-pointer active:scale-[0.99] ${
+              loading ? 'opacity-70 cursor-not-allowed' : ''
+            }`}
           >
-            {loading ? 'Signing In...' : 'Sign In'}
+            {loading ? "Signing In..." : "Sign In"}
           </button>
         </form>
       </div>

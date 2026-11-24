@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useContext } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Heart, Plus, Minus, Search, Sparkles } from 'lucide-react';
 import Navbar from '../components/Nav.jsx';
-import { GlobalContext } from '../context/Usecontext.jsx';
+import { useApp } from '../context/Usecontext.jsx';
 import Costume from '../services/costume.js';
 
 const CATEGORIES = [
@@ -15,156 +15,63 @@ const CATEGORIES = [
 ];
 
 export default function CollectionPage() {
-  const {
-    product = [],
-    productLoading,
-    cart = [],
-    setCart,
-    total = 0,
-    setTotal,
-    wishdata = [],
-    getWishlist,
-    fetchCart,
-  } = useContext(GlobalContext);
-
+  const { 
+    product = [], 
+    productLoading, 
+    cart = [], 
+    addToCart, 
+    updateCartQuantity, 
+    removeFromCart, 
+    getItemId 
+  } = useApp();
+  
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [likedItems, setLikedItems] = useState({});
 
-  // Custom hook wrapping backend interactions
-  const { handleCart, handleCartUpdate, handleDeleteItem, handleWish } = Costume();
+  const { handleWish } = Costume();
 
-  // Helper to extract a consistent ID string
-  const getItemId = (item) => String(item?._id || item?.id || "");
-
-  // Check if item is in wishlist
-  const isItemLiked = (itemId) => {
-    if (likedItems[itemId] !== undefined) return likedItems[itemId];
-    return (wishdata || []).some((w) => {
-      const id = w.productId?._id || w.productId || w._id;
-      return String(id) === String(itemId);
-    });
-  };
-
-  // ==========================================
   // 1. ADD NEW ITEM
-  // ==========================================
   const onAddToCart = async (item) => {
-    const itemId = getItemId(item);
-    if (!itemId) return;
-
-    const previousCart = [...cart];
-
-    // Optimistic UI update
-    setCart((prevCart = []) => [
-      ...prevCart,
-      { ...item, productId: itemId, quantity: 1 }
-    ]);
-    if (setTotal) setTotal((prev) => prev + 1);
-
     try {
-      await handleCart(itemId);
-      if (fetchCart) await fetchCart();
+      await addToCart(item, 1);
     } catch (err) {
-      console.error("Backend add failed, rolling back:", err.message);
-      setCart(previousCart);
-      if (setTotal) setTotal(previousCart.length);
+      console.error("Backend add failed:", err.message);
     }
   };
 
-  // ==========================================
   // 2. INCREMENT QUANTITY (+1)
-  // ==========================================
   const onIncrement = async (itemId, currentQty = 1) => {
-    const newQty = currentQty + 1;
-    const previousCart = [...cart];
-
-    // Optimistic UI update
-    setCart((prevCart = []) =>
-      prevCart.map((cartItem) => {
-        const id = getItemId(cartItem.productId) || getItemId(cartItem);
-        return id === String(itemId) ? { ...cartItem, quantity: newQty } : cartItem;
-      })
-    );
-
     try {
-      await handleCartUpdate(itemId, newQty);
+      await updateCartQuantity(itemId, currentQty + 1);
     } catch (err) {
-      console.error("Backend update failed, rolling back:", err.message);
-      setCart(previousCart);
+      console.error("Backend increment failed:", err.message);
     }
   };
 
-  // ==========================================
-  // 3. DECREMENT QUANTITY (-1 or DELETE)
-  // ==========================================
+  // 3. DECREMENT QUANTITY (-1 or REMOVE)
   const onDecrement = async (itemId, currentQty = 1) => {
-    const previousCart = [...cart];
-
-    // If quantity is 1, decrementing removes the item completely
-    if (currentQty <= 1) {
-      setCart((prevCart = []) =>
-        prevCart.filter((cartItem) => {
-          const id = getItemId(cartItem.productId) || getItemId(cartItem);
-          return id !== String(itemId);
-        })
-      );
-      if (setTotal) setTotal((prev) => Math.max(0, prev - 1));
-
-      try {
-        await handleDeleteItem(itemId);
-      } catch (err) {
-        console.error("Backend delete failed, rolling back:", err.message);
-        setCart(previousCart);
-        if (setTotal) setTotal(previousCart.length);
-      }
-      return;
-    }
-
-    const newQty = currentQty - 1;
-
-    // Optimistic UI decrement
-    setCart((prevCart = []) =>
-      prevCart.map((cartItem) => {
-        const id = getItemId(cartItem.productId) || getItemId(cartItem);
-        return id === String(itemId) ? { ...cartItem, quantity: newQty } : cartItem;
-      })
-    );
-
     try {
-      await handleCartUpdate(itemId, newQty);
+      if (currentQty <= 1) {
+        await removeFromCart(itemId);
+      } else {
+        await updateCartQuantity(itemId, currentQty - 1);
+      }
     } catch (err) {
-      console.error("Backend update failed, rolling back:", err.message);
-      setCart(previousCart);
+      console.error("Backend decrement failed:", err.message);
     }
   };
 
-  // ==========================================
-  // 4. TOGGLE WISHLIST
-  // ==========================================
   const toggleLike = async (itemId) => {
-    if (!itemId) return;
-
-    // Optimistic toggle
-    setLikedItems((prev) => ({
-      ...prev,
-      [itemId]: !prev[itemId]
-    }));
-
     try {
       await handleWish(itemId);
-      if (getWishlist) await getWishlist();
+      setLikedItems((prev) => ({ ...prev, [itemId]: !prev[itemId] }));
     } catch (err) {
-      console.error("Wishlist toggle failed, rolling back:", err.message);
-      // Rollback on network/server failure
-      setLikedItems((prev) => ({
-        ...prev,
-        [itemId]: !prev[itemId]
-      }));
+      console.error("Wishlist error:", err.message);
     }
   };
 
-  // Filter products by search query and category
+  // Filter products by search and category
   const filteredProducts = useMemo(() => {
     if (!Array.isArray(product)) return [];
 
@@ -180,6 +87,7 @@ export default function CollectionPage() {
 
   return (
     <div className="w-full min-h-screen bg-[#FBFBFA] text-[#1E221E] font-sans antialiased py-6 px-3 sm:px-6 lg:px-8">
+      
       {/* Top Header, Search, & Filters */}
       <section className="max-w-7xl mx-auto space-y-4 mb-6">
         <Navbar cartCount={total || cart.length} />
@@ -206,7 +114,7 @@ export default function CollectionPage() {
           </div>
         </div>
 
-        {/* Category Filter Pills */}
+        {/* Category Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto py-1 no-scrollbar">
           {CATEGORIES.map((cat) => (
             <button
@@ -259,12 +167,12 @@ export default function CollectionPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
             {filteredProducts.map((item) => {
-              const itemId = getItemId(item);
-
-              // Check if item is already present in cart
+              const itemId = item._id || item.id;
+              
+              // Look up if this item is in the cart context to show either (+/-) or (+ Add)
               const cartItem = cart.find((c) => {
-                const cId = getItemId(c.productId) || getItemId(c);
-                return cId === itemId;
+                const cId = c.productId?._id || c.productId || c._id;
+                return String(cId) === String(itemId);
               });
 
               return (
@@ -272,13 +180,13 @@ export default function CollectionPage() {
                   key={itemId}
                   className="bg-white border border-[#EAE8E1] hover:border-[#1B3821] rounded-xs flex flex-col justify-between transition duration-200 hover:shadow-xs group"
                 >
+                  {/* Card Media */}
                   <div>
-                    {/* Media Container */}
                     <div className="relative aspect-square w-full bg-[#F4F3EE] overflow-hidden">
                       <img
                         src={item.image}
                         alt={item.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                        className="w-full h-full object-cover group-hover:scale-103 transition duration-300"
                         loading="lazy"
                       />
 
@@ -294,13 +202,13 @@ export default function CollectionPage() {
                       >
                         <Heart
                           className={`w-3 h-3 transition ${
-                            isItemLiked(itemId) ? "fill-red-700 text-red-700" : ""
+                            likedItems[itemId] ? "fill-red-700 text-red-700" : ""
                           }`}
                         />
                       </button>
                     </div>
 
-                    {/* Details */}
+                    {/* Content Details */}
                     <div className="p-2.5 space-y-1">
                       <h3 className="font-serif font-semibold text-xs text-stone-900 leading-snug line-clamp-1">
                         {item.name}
@@ -316,13 +224,14 @@ export default function CollectionPage() {
                     </div>
                   </div>
 
-                  {/* Pricing & Cart Action */}
+                  {/* Price & Action */}
                   <div className="p-2.5 pt-0">
                     <div className="pt-2 border-t border-stone-100 flex items-center justify-between gap-1">
                       <span className="text-xs font-bold text-stone-900">
                         ₹{item.price}
                       </span>
 
+                      {/* Dynamic Button: Stepper if in cart, "Add" if not */}
                       {cartItem ? (
                         <div className="flex items-center border border-stone-200 rounded-xs bg-[#FBFBFA]">
                           <button
@@ -363,6 +272,7 @@ export default function CollectionPage() {
           </div>
         )}
       </section>
+
     </div>
   );
 }

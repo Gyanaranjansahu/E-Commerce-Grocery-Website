@@ -1,167 +1,70 @@
 import { useState } from "react";
-import {
-  addtoCart,
-  Login,
-  signup,
-  logoutUser,
-  Cartupdate,
-  deleteItem,
-  clearCartApi,
-  toogleWishlist,
-  deleteWishItem,
-  create,
-  deleteProduct,
-  createOrder,
-  sendOtp,
-  resetPassword,
+import { 
+  Login, 
+  signup, 
+  logout,
+  sendOtp, 
+  verifyOtp, 
+  changePassword,
+  addtoCart, 
+  Cartupdate, 
+  deleteItem, 
+  toogleWishlist, 
+  create 
 } from "./api.js";
+
+// =========================================================================
+// APPROACH:
+// `Costume` is a lightweight custom hook designed to manage loading states
+// across asynchronous actions (login, signup, OTP, cart, product creation).
+// It keeps UI components simple so they don't have to duplicate `setLoading(true)`
+// and `setLoading(false)` everywhere.
+// =========================================================================
 
 export default function Costume() {
   const [loading, setLoading] = useState(false);
 
-  async function handleSignup(data) {
+  // Wrapper helper to execute async functions with automatic loading state
+  const executeWithLoading = async (asyncFn) => {
     setLoading(true);
     try {
-      const res = await signup(data);
-      return res;
+      return await asyncFn();
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  async function handleLogin(data) {
-    setLoading(true);
-    try {
-      const res = await Login(data);
-      return res;
-    } finally {
-      setLoading(false);
-    }
-  }
+  // 1. Authentication
+  const handleSignup = (data) => executeWithLoading(() => signup(data));
+  const handleLogin = (credentials) => executeWithLoading(() => Login(credentials));
+  const handleLogout = () => executeWithLoading(() => logout());
 
-  async function handleLogout() {
-    setLoading(true);
-    try {
-      const res = await logoutUser();
-      return res;
-    } finally {
-      setLoading(false);
-    }
-  }
+  // 2. OTP & Password Reset
+  const handleSendOtp = (email) => executeWithLoading(() => sendOtp(email));
+  const handleVerifyOtp = (payload) => executeWithLoading(() => verifyOtp(payload));
+  const handleChangePassword = (payload) => executeWithLoading(() => changePassword(payload));
 
-  async function handleCart(productId, quantity = 1) {
-    setLoading(true);
-    try {
-      const res = await addtoCart(productId, quantity);
-      return res;
-    } finally {
-      setLoading(false);
-    }
-  }
+  // 3. Cart & Wishlist Actions
+  const handleCart = (productId) => executeWithLoading(() => addtoCart(productId));
+  const handleCartUpdate = (productId, quantity) => executeWithLoading(() => Cartupdate(productId, quantity));
+  const handleDeleteItem = (productId) => executeWithLoading(() => deleteItem(productId));
+  const handleWish = (itemId) => executeWithLoading(() => toogleWishlist(itemId));
 
-  async function handleCartUpdate(productId, quantity) {
-    setLoading(true);
-    try {
-      const res = await Cartupdate(productId, quantity);
-      return res;
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleDeleteItem(productId) {
-    setLoading(true);
-    try {
-      const res = await deleteItem(productId);
-      return res;
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleClearCart() {
-    setLoading(true);
-    try {
-      const res = await clearCartApi();
-      return res;
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleWish(productId) {
-    return await toogleWishlist(productId);
-  }
-
-  async function handleDeleteWish(productId) {
-    return await deleteWishItem(productId);
-  }
-
-  async function handleCreate(data) {
-    setLoading(true);
-    try {
-      const res = await create(data);
-      return res;
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleDeleteProduct(productId) {
-    setLoading(true);
-    try {
-      const res = await deleteProduct(productId);
-      return res;
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleCreateOrder(orderData) {
-    setLoading(true);
-    try {
-      const res = await createOrder(orderData);
-      return res;
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleSendOtp(email) {
-    setLoading(true);
-    try {
-      const res = await sendOtp(email);
-      return res;
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleResetPassword(email, otp, newPassword) {
-    setLoading(true);
-    try {
-      const res = await resetPassword(email, otp, newPassword);
-      return res;
-    } finally {
-      setLoading(false);
-    }
-  }
+  // 4. Admin Product Creation
+  const handleCreate = (data) => executeWithLoading(() => create(data));
 
   return {
     loading,
-    handleLogin,
     handleSignup,
+    handleLogin,
     handleLogout,
+    handleSendOtp,
+    handleVerifyOtp,
+    handleChangePassword,
     handleCart,
     handleCartUpdate,
     handleDeleteItem,
-    handleClearCart,
     handleWish,
-    handleDeleteWish,
     handleCreate,
-    handleDeleteProduct,
-    handleCreateOrder,
-    handleSendOtp,
-    handleResetPassword,
   };
 }

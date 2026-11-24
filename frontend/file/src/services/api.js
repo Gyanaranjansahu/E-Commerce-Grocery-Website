@@ -1,65 +1,66 @@
 import axios from "axios";
-import { toast } from "sonner";
 
-export const api = axios.create({
-  baseURL: "https://e-commerce-grocery-website-6wyf.onrender.com",
+// =========================================================================
+// APPROACH & ARCHITECTURE:
+// 1. Axios instance configured with `withCredentials: true` so the browser 
+//    automatically attaches HTTP-only cookies (`Access_token` and `Refresh_token`).
+// 2. Simple 401 Response Interceptor: When an access token expires (15 mins), 
+//    the backend returns 401. The interceptor intercepts this, calls `POST /refresh`
+//    once, and retries the failed request seamlessly.
+// 3. Clear, simple async functions that return the response payload or throw a readable error.
+// =========================================================================
+
+const api = axios.create({
+  baseURL: "http://localhost:5000/api/v1",
   withCredentials: true,
 });
 
-// Automatically attach JWT token from localStorage to every outgoing request
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// Response interceptor to handle expired sessions cleanly
+// Simple interceptor to automatically renew access token when expired
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Check if error is 401 Unauthorized and not already retried
+    if (
+      error.response?.status === 401 &&
+      !originalRequest?._retry &&
+      !originalRequest?.url?.includes("/login") &&
+      !originalRequest?.url?.includes("/register") &&
+      !originalRequest?.url?.includes("/refresh")
+    ) {
+      originalRequest._retry = true;
+
+      try {
+        // Attempt to generate a new Access_token using the Refresh_token cookie
+        await api.post("/refresh");
+        // Retry the original request with the updated cookie
+        return api(originalRequest);
+      } catch (refreshError) {
+        // Refresh token is also expired or invalid -> reject cleanly
+        return Promise.reject(refreshError);
+      }
     }
+
     return Promise.reject(error);
   }
 );
 
-// Helper to extract clean error message from backend responses
-export const getErrorMessage = (err, fallback = "Something went wrong") => {
-  return (
-    err.response?.data?.message ||
-    err.response?.data?.error ||
-    err.message ||
-    fallback
-  );
+// Helper to extract clean error message
+const getErrorMessage = (err, fallback) => {
+  return err.response?.data?.message || err.response?.data?.error || err.message || fallback;
 };
 
-// ==========================================
-// AUTHENTICATION
-// ==========================================
-export async function signup(data) {
-  const {
-    name,
-    email,
-    password,
-    phone,
-    number,
-    profileImage,
-    flat,
-    landmark,
-    area,
-    city,
-    pin,
-  } = data;
+// =========================================================================
+// AUTHENTICATION APIs
+// =========================================================================
 
+// 1. Register User (multipart/form-data for profile picture)
+export async function signup(data) {
   try {
+    const { name, email, password, phone, number, profileImage, flat, landmark, area, city, pin } = data;
     const form = new FormData();
+
     form.append("name", name || "");
     form.append("email", email || "");
     form.append("password", password || "");
@@ -73,336 +74,203 @@ export async function signup(data) {
       form.append("profileImage", profileImage);
     }
 
-    const response = await api.post("/api/v1/register", form, {
+    const response = await api.post("/register", form, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-
-    toast.success(response.data?.message || "Account registered successfully!");
     return response.data;
   } catch (err) {
-    const errorMsg = getErrorMessage(err, "Registration failed");
-    toast.error(errorMsg);
-    throw new Error(errorMsg);
+    throw new Error(getErrorMessage(err, "Registration failed"));
   }
 }
 
-export async function Login({ email, password }) {
+// 2. Login User (receives Access_token & Refresh_token cookies)
+export async function Login(credentials, maybePassword) {
   try {
-    const response = await api.post("/api/v1/login", { email, password });
-    toast.success(response.data?.message || "Logged in successfully!");
+    const payload = typeof credentials === "object" && credentials !== null
+      ? credentials
+      : { email: credentials, password: maybePassword };
+    const response = await api.post("/login", payload);
     return response.data;
   } catch (err) {
-    const errorMsg = getErrorMessage(err, "Login failed");
-    toast.error(errorMsg);
-    throw new Error(errorMsg);
+    throw new Error(getErrorMessage(err, "Login failed"));
   }
 }
 
-export async function logoutUser() {
-  try {
-    const response = await api.post("/api/v1/logout");
-    toast.success(response.data?.message || "Signed out successfully");
-    return response.data;
-  } catch (err) {
-    const errorMsg = getErrorMessage(err, "Logout failed");
-    toast.error(errorMsg);
-    throw new Error(errorMsg);
-  }
-}
-
+// 3. Get Authenticated User Details
 export async function getuser() {
   try {
-    const response = await api.get("/api/v1/getuser");
-    return response.data;
-  } catch {
-    return null;
-  }
-}
-
-// ==========================================
-// PASSWORD RECOVERY / OTP
-// ==========================================
-export async function sendOtp(email) {
-  try {
-    const response = await api.post("/api/v1/generateOtp", { email });
-    toast.success(response.data?.message || "Verification code sent to your email!");
+    const response = await api.get("/getuser");
     return response.data;
   } catch (err) {
-    const errorMsg = getErrorMessage(err, "Failed to send verification code");
-    toast.error(errorMsg);
-    throw new Error(errorMsg);
+    throw new Error(getErrorMessage(err, "Failed to fetch user"));
   }
 }
 
-export async function verifyOtp(email, otp) {
+// 4. Refresh Access Token explicitly if needed
+export async function refreshToken() {
   try {
-    const response = await api.post("/api/v1/verifyOtp", { email, otp });
-    toast.success(response.data?.message || "Code verified successfully!");
+    const response = await api.post("/refresh");
     return response.data;
   } catch (err) {
-    const errorMsg = getErrorMessage(err, "Invalid or expired code");
-    toast.error(errorMsg);
-    throw new Error(errorMsg);
+    throw new Error(getErrorMessage(err, "Session expired. Please log in again."));
   }
 }
 
-export async function resetPassword(email, otp, newPassword) {
+// 5. Logout User (clears backend authentication cookies)
+export async function logout() {
   try {
-    const response = await api.post("/api/v1/resetPassword", { email, otp, newPassword });
-    toast.success(response.data?.message || "Password reset successfully!");
+    const response = await api.post("/logout");
     return response.data;
   } catch (err) {
-    const errorMsg = getErrorMessage(err, "Failed to reset password");
-    toast.error(errorMsg);
-    throw new Error(errorMsg);
+    throw new Error(getErrorMessage(err, "Logout failed"));
   }
 }
 
-// ==========================================
-// CATALOG
-// ==========================================
+// =========================================================================
+// OTP & PASSWORD RESET APIs
+// =========================================================================
+
+// 6. Send OTP to registered email
+export async function sendOtp(emailOrPayload) {
+  try {
+    const payload = typeof emailOrPayload === "object" && emailOrPayload !== null
+      ? emailOrPayload
+      : { email: emailOrPayload };
+    const response = await api.post("/forgetPassword", payload);
+    return response.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to send OTP code"));
+  }
+}
+
+// 7. Verify 6-digit OTP code
+export async function verifyOtp(emailOrPayload, maybeOtp) {
+  try {
+    const payload = typeof emailOrPayload === "object" && emailOrPayload !== null
+      ? emailOrPayload
+      : { email: emailOrPayload, otp: maybeOtp };
+    const response = await api.post("/verify", payload);
+    return response.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Invalid or expired OTP"));
+  }
+}
+
+// 8. Update Password (after OTP verification or direct reset)
+export async function changePassword(emailOrPayload, maybePassword) {
+  try {
+    const payload = typeof emailOrPayload === "object" && emailOrPayload !== null
+      ? emailOrPayload
+      : { email: emailOrPayload, newPassword: maybePassword };
+    const response = await api.patch("/changePassword", payload);
+    return response.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to update password"));
+  }
+}
+
+// =========================================================================
+// PRODUCTS, CART & WISHLIST APIs
+// =========================================================================
+
+// 9. Fetch all products
 export async function getItems() {
   try {
-    const response = await api.get("/api/v1/getItem");
+    const response = await api.get("/getItem");
     return response.data;
-  } catch (error) {
-    console.error("Failed to fetch catalog:", error);
-    return { data: [] };
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to fetch products"));
   }
 }
 
-export async function getProductById(id) {
+// 10. Add item to cart
+export async function addtoCart(productId) {
   try {
-    const response = await api.get(`/api/v1/product/${id}`);
+    const response = await api.post("/addtoCart", { productId });
     return response.data;
-  } catch (error) {
-    const errorMsg = getErrorMessage(error, "Failed to fetch product");
-    toast.error(errorMsg);
-    throw new Error(errorMsg);
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to add item to cart"));
   }
 }
 
-// ==========================================
-// CART
-// ==========================================
-export async function addtoCart(productId, quantity = 1) {
-  try {
-    const response = await api.post("/api/v1/addtoCart", { productId, quantity });
-    toast.success(response?.data?.message || "Item added to cart!");
-    return response.data;
-  } catch (error) {
-    const errorMsg = getErrorMessage(error, "Failed to add item to cart");
-    toast.error(errorMsg);
-    throw new Error(errorMsg);
-  }
-}
-
+// 11. View cart items
 export async function Getcart() {
   try {
-    const response = await api.get("/api/v1/cartItem");
+    const response = await api.get("/cartItem");
     return response.data;
-  } catch {
-    return { data: { products: [] } };
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to load cart"));
   }
 }
 
+// 12. Update quantity in cart
 export async function Cartupdate(productId, quantity) {
   try {
-    const response = await api.put("/api/v1/updateCart", { productId, quantity });
+    const response = await api.put("/updateCart", { productId, quantity });
     return response.data;
-  } catch (error) {
-    const errorMsg = getErrorMessage(error, "Failed to update cart");
-    toast.error(errorMsg);
-    throw new Error(errorMsg);
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to update cart quantity"));
   }
 }
 
+// 13. Remove item from cart
 export async function deleteItem(productId) {
   try {
-    const response = await api.delete("/api/v1/removeItem", { data: { productId } });
-    toast.info(response?.data?.message || "Item removed from cart");
+    const response = await api.delete("/removeItem", { data: { productId } });
     return response.data;
-  } catch (error) {
-    const errorMsg = getErrorMessage(error, "Failed to remove item");
-    toast.error(errorMsg);
-    throw new Error(errorMsg);
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to remove item from cart"));
   }
 }
 
-export async function clearCartApi() {
+// 14. Toggle item in wishlist
+export async function toogleWishlist(itemId) {
   try {
-    const response = await api.delete("/api/v1/clearCart");
+    const response = await api.post("/wishlist", { productId: itemId });
     return response.data;
-  } catch (error) {
-    console.error("Failed to clear cart:", error);
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to update wishlist"));
   }
 }
 
-// ==========================================
-// WISHLIST
-// ==========================================
-export async function toogleWishlist(productId) {
+// 15. Fetch user wishlist
+export async function getWishList() {
   try {
-    const response = await api.post("/api/v1/wishlist", { productId });
-    toast.success(response?.data?.message || "Wishlist updated");
+    const response = await api.get("/wishItem");
     return response.data;
-  } catch (error) {
-    const errorMsg = getErrorMessage(error, "Failed to update wishlist");
-    toast.error(errorMsg);
-    throw new Error(errorMsg);
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to fetch wishlist"));
   }
 }
 
-export const getWishList = async () => {
+// 16. Admin create product
+export async function create(productData) {
   try {
-    const response = await api.get("/api/v1/wishItem");
-    return response.data;
-  } catch {
-    return { wish: { products: [] } };
-  }
-};
+    const form = new FormData();
+    form.append("name", productData.name || "");
+    form.append("description", productData.description || "");
+    form.append("price", productData.price || "");
+    form.append("quantity", productData.quantity || "");
+    form.append("category", productData.category || "");
 
-export const deleteWishItem = async (productId) => {
-  try {
-    const response = await api.delete("/api/v1/wishlist", { data: { productId } });
-    toast.info("Removed from wishlist");
-    return response.data;
-  } catch (error) {
-    const errorMsg = getErrorMessage(error, "Failed to remove from wishlist");
-    toast.error(errorMsg);
-    throw new Error(errorMsg);
-  }
-};
+    if (productData.image instanceof File || productData.image instanceof Blob) {
+      form.append("image", productData.image);
+    }
 
-// ==========================================
-// ORDERS
-// ==========================================
-export async function createOrder(orderData) {
-  try {
-    const response = await api.post("/api/v1/order", orderData);
-    toast.success(response.data?.message || "Order placed successfully!");
+    const response = await api.post("/createProduct", form);
     return response.data;
-  } catch (error) {
-    const errorMsg = getErrorMessage(error, "Failed to place order");
-    toast.error(errorMsg);
-    throw new Error(errorMsg);
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to create product"));
   }
 }
 
-export async function getMyOrders() {
-  try {
-    const response = await api.get("/api/v1/myOrders");
-    return response.data;
-  } catch (error) {
-    const errorMsg = getErrorMessage(error, "Failed to fetch orders");
-    console.error(errorMsg);
-    return { orders: [] };
-  }
-}
-
-export async function getAllOrders() {
-  try {
-    const response = await api.get("/api/v1/admin/orders");
-    return response.data;
-  } catch (error) {
-    const errorMsg = getErrorMessage(error, "Failed to fetch orders");
-    console.error(errorMsg);
-    return { orders: [] };
-  }
-}
-
-export async function updateOrderStatus(orderId, status) {
-  try {
-    const response = await api.put(`/api/v1/order/status/${orderId}`, { status });
-    toast.success(response.data?.message || `Order status updated to ${status}`);
-    return response.data;
-  } catch (error) {
-    const errorMsg = getErrorMessage(error, "Failed to update order status");
-    toast.error(errorMsg);
-    throw new Error(errorMsg);
-  }
-}
-
-// ==========================================
-// ADMIN MANAGEMENT
-// ==========================================
+// 17. Get Admin Details
 export async function getAdmin() {
   try {
-    const response = await api.get("/api/v1/admin_details");
+    const response = await api.get("/admin_details");
     return response.data;
-  } catch {
-    return null;
-  }
-}
-
-export async function getAllUsers() {
-  try {
-    const response = await api.get("/api/v1/admin/users");
-    return response.data;
-  } catch (error) {
-    console.error("Failed to fetch users:", error);
-    return { users: [] };
-  }
-}
-
-export async function create(productData) {
-  const form = new FormData();
-  form.append("name", productData.name || "");
-  form.append("description", productData.description || "");
-  form.append("price", productData.price || "");
-  form.append("quantity", productData.quantity || "");
-  form.append("category", productData.category || "");
-
-  if (productData.image instanceof File || productData.image instanceof Blob) {
-    form.append("image", productData.image);
-  }
-
-  try {
-    const response = await api.post("/api/v1/createProduct", form, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    toast.success(response.data?.message || "Product created successfully!");
-    return response.data;
-  } catch (error) {
-    const errorMsg = getErrorMessage(error, "Failed to create product");
-    toast.error(errorMsg);
-    throw new Error(errorMsg);
-  }
-}
-
-export async function deleteProduct(productId) {
-  try {
-    const response = await api.delete(`/api/v1/deleteProduct/${productId}`);
-    toast.success(response.data?.message || "Product deleted successfully!");
-    return response.data;
-  } catch (error) {
-    const errorMsg = getErrorMessage(error, "Failed to delete product");
-    toast.error(errorMsg);
-    throw new Error(errorMsg);
-  }
-}
-
-export async function updateProduct(productId, productData) {
-  const form = new FormData();
-  if (productData.name) form.append("name", productData.name);
-  if (productData.description) form.append("description", productData.description);
-  if (productData.price) form.append("price", productData.price);
-  if (productData.quantity) form.append("quantity", productData.quantity);
-  if (productData.category) form.append("category", productData.category);
-  if (productData.image instanceof File || productData.image instanceof Blob) {
-    form.append("image", productData.image);
-  }
-
-  try {
-    const response = await api.put(`/api/v1/updateProduct/${productId}`, form, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    toast.success(response.data?.message || "Product updated successfully!");
-    return response.data;
-  } catch (error) {
-    const errorMsg = getErrorMessage(error, "Failed to update product");
-    toast.error(errorMsg);
-    throw new Error(errorMsg);
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to verify admin"));
   }
 }
 
