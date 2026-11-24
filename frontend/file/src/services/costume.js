@@ -10,7 +10,8 @@ import {
   Cartupdate, 
   deleteItem, 
   toogleWishlist, 
-  create 
+  create,
+  createOrder
 } from "./api.js";
 
 // =========================================================================
@@ -50,8 +51,9 @@ export default function Costume() {
   const handleDeleteItem = (productId) => executeWithLoading(() => deleteItem(productId));
   const handleWish = (itemId) => executeWithLoading(() => toogleWishlist(itemId));
 
-  // 4. Admin Product Creation
+  // 4. Admin Product Creation & Orders
   const handleCreate = (data) => executeWithLoading(() => create(data));
+  const handleCreateOrder = (data) => executeWithLoading(() => createOrder(data));
 
   return {
     loading,
@@ -66,5 +68,6 @@ export default function Costume() {
     handleDeleteItem,
     handleWish,
     handleCreate,
+    handleCreateOrder,
   };
 }

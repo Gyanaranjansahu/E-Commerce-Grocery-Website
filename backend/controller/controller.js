@@ -8,6 +8,7 @@ import uploadToCloud from "../config/uploadtocloud.js";
 import fs from "fs";
 import ProductModel from "../model/product.js";
 import wishlistModel from "../model/wishlistModel.js";
+import Order from "../model/orderSchema.js";
 import { Verify } from "crypto";
 class HandleController {
   static Register = async (req, res, next) => {
@@ -735,6 +736,109 @@ static deleteWish = async (req, res, next) => {
     next(error);
   }
 };
+
+  static createOrder = async (req, res, next) => {
+    try {
+      const userId = req.user._id || req.user.id;
+      const { products, totalAmount, shippingAddress, paymentMethod } = req.body;
+
+      const newOrder = await Order.create({
+        user: userId,
+        products,
+        totalAmount,
+        shippingAddress,
+        paymentMethod: paymentMethod || "COD",
+        orderStatus: "PLACED",
+      });
+
+      // Clear user cart
+      await CartModel.findOneAndUpdate({ userId }, { $set: { products: [] } });
+
+      return res.status(201).json({
+        success: true,
+        message: "Order placed successfully",
+        order: newOrder,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static getMyOrders = async (req, res, next) => {
+    try {
+      const userId = req.user._id || req.user.id;
+      const orders = await Order.find({ user: userId })
+        .populate("products.product")
+        .sort({ createdAt: -1 });
+
+      return res.status(200).json({
+        success: true,
+        orders,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static getAllOrders = async (req, res, next) => {
+    try {
+      const orders = await Order.find({})
+        .populate("user", "name email phone")
+        .populate("products.product")
+        .sort({ createdAt: -1 });
+
+      return res.status(200).json({
+        success: true,
+        orders,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static updateOrderStatus = async (req, res, next) => {
+    try {
+      const { orderId, orderStatus } = req.body;
+      const order = await Order.findByIdAndUpdate(
+        orderId,
+        { $set: { orderStatus } },
+        { new: true }
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Order status updated",
+        order,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static getAllUsers = async (req, res, next) => {
+    try {
+      const users = await UserModel.find({}).select("-password").sort({ createdAt: -1 });
+      return res.status(200).json({
+        success: true,
+        users,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static deleteProduct = async (req, res, next) => {
+    try {
+      const { productId } = req.body;
+      await ProductModel.findByIdAndDelete(productId);
+      return res.status(200).json({
+        success: true,
+        message: "Product deleted successfully",
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default HandleController;

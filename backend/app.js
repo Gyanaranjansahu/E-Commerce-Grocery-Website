@@ -27,6 +27,8 @@ const allowedOrigins = [
   "http://127.0.0.1:5174",
   "http://localhost:3000",
   "https://e-commerce-grocery-website-six.vercel.app",
+  "https://e-commerce-grocery-website-tau.vercel.app",
+  "https://e-commerce-grocery-website-beta.vercel.app",
 ];
 
 const corsOptions = {
@@ -49,15 +51,21 @@ const corsOptions = {
         return callback(null, true);
       } else {
         console.warn(`[CORS Blocked] Origin not allowed: ${origin}`);
-        return callback(new Error(`CORS blocked for origin: ${origin}`));
+        return callback(null, false);
       }
     } catch (err) {
-      return callback(new Error("Invalid Origin header"));
+      return callback(null, false);
     }
   },
   credentials: true, // Required for Access_token & Refresh_token cookies
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+    "Origin",
+  ],
   optionsSuccessStatus: 200, // Legacy browsers support
 };
 

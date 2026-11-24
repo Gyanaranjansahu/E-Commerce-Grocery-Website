@@ -3,11 +3,6 @@ import { Route, Routes, Navigate } from 'react-router-dom';
 import GroceryLoader from './components/Loading.jsx';
 import Protection from './Router/Protective.jsx';
 import AdminProtection from './Router/adminProtection.jsx';
-import OurStory from './page/OurStory.jsx';
-import LabPurityReport from './page/LabPurityReport.jsx';
-import WishlistPage from './wishlist/wishlist.jsx';
-import CreateProduct from './Admin/CreateProduct.jsx';
-import AdminDashboard from './Admin/adminDashboard.jsx';
 import { Toaster } from 'sonner';
 
 // Lazy-loaded route components
@@ -20,11 +15,18 @@ const CartPage = lazy(() => import('./cart/cart.jsx'));
 const OrderCheckoutPage = lazy(() => import('./page/OrderCheckout.jsx'));
 const OrdersPage = lazy(() => import('./page/Orders.jsx'));
 const ForgotPassword = lazy(() => import('./page/ForgotPassword.jsx'));
+const Logout = lazy(() => import('./page/Logout.jsx'));
+const OurStory = lazy(() => import('./page/OurStory.jsx'));
+const LabPurityReport = lazy(() => import('./page/LabPurityReport.jsx'));
+const WishlistPage = lazy(() => import('./wishlist/wishlist.jsx'));
+const CreateProduct = lazy(() => import('./Admin/CreateProduct.jsx'));
+const AdminDashboard = lazy(() => import('./Admin/adminDashboard.jsx'));
+const Terms = lazy(() => import('./page/Terms.jsx'));
 
-// Simple clean 404 fallback
+// 404 Fallback page
 const NotFound = () => (
   <div className="min-h-screen bg-[#FBFBFA] flex flex-col items-center justify-center p-6 text-center">
-    <span className="text-4xl font-serif font-bold text-stone-900 mb-2">404</span>
+    <span className="text-4xl font-serif font-bold text-emerald-950 mb-2">404</span>
     <h2 className="text-lg font-serif font-semibold text-stone-800 mb-2">Harvest Page Not Found</h2>
     <p className="text-xs text-stone-500 mb-6 max-w-sm">The route you requested does not exist or has been relocated to another section.</p>
     <a href="/" className="px-5 py-2.5 bg-[#1B3821] text-white text-xs font-semibold uppercase tracking-wider rounded-md hover:bg-[#122817] transition">
@@ -47,42 +49,45 @@ const App = () => {
           } />
           <Route path="/our-story" element={<OurStory />} />
           <Route path="/purity" element={<LabPurityReport />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/terms-and-conditions" element={<Terms />} />
+          <Route path="/terms-of-condition" element={<Terms />} />
+
+          {/* User Protected Routes */}
           <Route path="/wishlist" element={
             <Protection>
               <WishlistPage />
             </Protection>
           } />
-
-          {/* Authentication */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<SignupUI />} />
-          <Route path="/forgot" element={<ForgotPassword />} />
-
-          {/* User Protected Cart & Orders */}
           <Route path="/cart" element={
             <Protection>
               <CartPage />
             </Protection>
           } />
-          <Route
-            path="/order"
-            element={
-              <Protection>
-                <OrderCheckoutPage />
-              </Protection>
-            }
-          />
-          <Route
-            path="/orders"
-            element={
-              <Protection>
-                <OrdersPage />
-              </Protection>
-            }
-          />
+          <Route path="/order" element={
+            <Protection>
+              <OrderCheckoutPage />
+            </Protection>
+          } />
+          <Route path="/orders" element={
+            <Protection>
+              <OrdersPage />
+            </Protection>
+          } />
 
-          {/* Admin Routes - CreateProduct strictly inside AdminDashboard */}
+          {/* Authentication Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<SignupUI />} />
+          <Route path="/forgot" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ForgotPassword />} />
+          <Route path="/change-password" element={<ForgotPassword />} />
+          <Route path="/logout" element={<Logout />} />
+
+          {/* Admin Routes with Aliases */}
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/Admin_login" element={<Navigate to="/admin/login" replace />} />
+          <Route path="/adminLogin" element={<Navigate to="/admin/login" replace />} />
+
           <Route
             path="/admin/dashboard"
             element={
@@ -95,7 +100,20 @@ const App = () => {
             <Route path="create" element={<CreateProduct />} />
           </Route>
 
-          {/* Fallback */}
+          <Route
+            path="/adminDashboard"
+            element={<Navigate to="/admin/dashboard" replace />}
+          />
+          <Route
+            path="/_upload_Product"
+            element={
+              <AdminProtection>
+                <CreateProduct />
+              </AdminProtection>
+            }
+          />
+
+          {/* 404 Catch-All */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

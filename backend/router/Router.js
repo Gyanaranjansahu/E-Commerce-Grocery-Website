@@ -27,4 +27,12 @@ MainRouter.get("/cartItem",Authmiddleware,HandleController.viewCart)
 MainRouter.post("/wishlist",Authmiddleware,HandleController.WishList)
 MainRouter.get("wishItem",Authmiddleware,HandleController.getWish)
 MainRouter.put("/updateCart",Authmiddleware,HandleController.updateCart)
+
+// Orders & Admin Management
+MainRouter.post("/order", Authmiddleware, HandleController.createOrder)
+MainRouter.get("/myOrders", Authmiddleware, HandleController.getMyOrders)
+MainRouter.get("/admin/orders", Authmiddleware, verifyAdmin, HandleController.getAllOrders)
+MainRouter.put("/admin/orderStatus", Authmiddleware, verifyAdmin, HandleController.updateOrderStatus)
+MainRouter.get("/admin/users", Authmiddleware, verifyAdmin, HandleController.getAllUsers)
+MainRouter.delete("/admin/deleteProduct", Authmiddleware, verifyAdmin, HandleController.deleteProduct)
 export default MainRouter

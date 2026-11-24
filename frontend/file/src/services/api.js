@@ -280,4 +280,64 @@ export async function getAdmin() {
   }
 }
 
+// 18. Orders: Place new order
+export async function createOrder(orderData) {
+  try {
+    const response = await api.post("/order", orderData);
+    return response.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to place order"));
+  }
+}
+
+// 19. Orders: Get authenticated user's orders
+export async function getMyOrders() {
+  try {
+    const response = await api.get("/myOrders");
+    return response.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to load orders"));
+  }
+}
+
+// 20. Admin: Get all customer orders
+export async function getAllOrders() {
+  try {
+    const response = await api.get("/admin/orders");
+    return response.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to fetch all orders"));
+  }
+}
+
+// 21. Admin: Update status of an order
+export async function updateOrderStatus(orderId, orderStatus) {
+  try {
+    const response = await api.put("/admin/orderStatus", { orderId, orderStatus });
+    return response.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to update order status"));
+  }
+}
+
+// 22. Admin: Get all registered customers
+export async function getAllUsers() {
+  try {
+    const response = await api.get("/admin/users");
+    return response.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to fetch users"));
+  }
+}
+
+// 23. Admin: Delete product
+export async function deleteProduct(productId) {
+  try {
+    const response = await api.delete("/admin/deleteProduct", { data: { productId } });
+    return response.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to delete product"));
+  }
+}
+
 export default api;
