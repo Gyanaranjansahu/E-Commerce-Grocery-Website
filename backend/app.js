@@ -23,7 +23,7 @@ app.use(limiter);
 app.use(cors({
     origin: [
         "http://localhost:5173",
-        "https://e-commerce-grocery-website-beta.vercel.app"
+       "https://e-commerce-grocery-website-six.vercel.app"
         // Add your new frontend Vercel URL here
     ],
     credentials: true
