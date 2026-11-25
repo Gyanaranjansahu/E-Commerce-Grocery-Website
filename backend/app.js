@@ -16,35 +16,53 @@ connectDb();
 // 2. CORS
 const allowedOrigins = [
   "https://e-commerce-grocery-website-iota.vercel.app",
-  "https://e-commerce-grocery-website-jw2v0je2k-gyanaranjansahus-projects.vercel.app",
-  "https://e-commerce-grocery-website-yueeujc2p-gyanaranjansahus-projects.vercel.app",
+  "https://e-commerce-grocery-website-six.vercel.app",
+  "https://e-commerce-grocery-website-tau.vercel.app",
+  "https://e-commerce-grocery-website-beta.vercel.app",
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (
-        !origin ||
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow non-browser requests (Postman, curl, backend-to-backend)
+    if (!origin) return callback(null, true);
+
+    try {
+      const parsedUrl = new URL(origin);
+      const hostname = parsedUrl.hostname;
+
+      // Allow all localhost ports and any vercel preview/production domain
+      const isAllowed =
         allowedOrigins.includes(origin) ||
-        origin === "http://localhost:5173"
-      ) {
+        hostname === "localhost" ||
+        hostname === "127.0.0.1" ||
+        hostname.endsWith(".vercel.app");
+
+      if (isAllowed) {
         return callback(null, true);
       }
 
-      console.log("CORS blocked:", origin);
-      return callback(new Error("Not allowed by CORS"));
-    },
+      console.warn("CORS blocked origin:", origin);
+      // Return false without throwing Error so Express doesn't crash into 500
+      return callback(null, false);
+    } catch {
+      return callback(null, false);
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "Accept",
+    "X-Requested-With",
+    "Origin",
+  ],
+  optionsSuccessStatus: 200,
+};
 
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "Accept",
-    ],
-  })
-);
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 // 3. Rate Limiting
 app.use(
