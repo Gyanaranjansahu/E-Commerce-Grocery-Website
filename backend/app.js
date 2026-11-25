@@ -3,117 +3,79 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { rateLimit } from "express-rate-limit";
+
 import connectDb from "./config/db.js";
 import MainRouter from "./router/Router.js";
 import GlobalError from "./Error.js";
 
 const app = express();
 
-// =========================================================================
-// 1. DATABASE CONNECTION
-// Connects to MongoDB Atlas using custom DNS servers (8.8.8.8) to resolve SRV records
-// =========================================================================
+// 1. Database
 connectDb();
 
-// =========================================================================
-// 2. PRODUCTION & DEVELOPMENT CORS CONFIGURATION
-// Placed before all other middlewares and routes to ensure CORS headers are
-// attached to EVERY request, including preflight OPTIONS and error responses.
-// =========================================================================
+// 2. CORS
 const allowedOrigins = [
-  "https://e-commerce-grocery-website-six.vercel.app",
+  "https://e-commerce-grocery-website-iota.vercel.app",
   "https://e-commerce-grocery-website-tau.vercel.app",
   "https://e-commerce-grocery-website-beta.vercel.app",
   "https://e-commerce-grocery-website-iota.vercel.app",
-  "https://e-commerce-grocery-website-jw2v0je2k-gyanaranjansahus-projects.vercel.app"
-];
+  "https://e-commerce-grocery-website-jw2v0je2k-gyanaranjansahus-projects.vercel.app",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow non-browser requests (Postman, curl, backend-to-backend)
-    if (!origin) return callback(null, true);
-
-    try {
-      const parsedUrl = new URL(origin);
-      const hostname = parsedUrl.hostname;
-      const isAllowedVercelPreview =
-        /^https:\/\/e-commerce-grocery-website-[a-z0-9]+-gyanaranjansahus-projects\.vercel\.app$/.test(
-          parsedUrl.origin
-        );
-
-      const isAllowed =
-        allowedOrigins.includes(parsedUrl.origin) ||
-        isAllowedVercelPreview ||
-        hostname === "localhost" ||
-        hostname === "127.0.0.1" ||
-        (process.env.FRONTEND_URL &&
-          new URL(process.env.FRONTEND_URL).origin === parsedUrl.origin);
-
-      if (isAllowed) {
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        origin === "http://localhost:5173"
+      ) {
         return callback(null, true);
-      } else {
-        console.warn(`[CORS Blocked] Origin not allowed: ${origin}`);
-        return callback(null, false);
       }
-    } catch (err) {
-      return callback(null, false);
-    }
-  },
-  credentials: true, // Required for Access_token & Refresh_token cookies
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Requested-With",
-    "Accept",
-    "Origin",
-  ],
-  optionsSuccessStatus: 200, // Legacy browsers support
-};
 
-// The CORS middleware also handles preflight OPTIONS requests.
-app.use(cors(corsOptions));
+      console.log("CORS blocked:", origin);
+      return callback(new Error("Not allowed by CORS"));
+    },
 
-// =========================================================================
-// 3. RATE LIMITING
-// Must be registered AFTER cors so that any 429 response includes CORS headers!
-// =========================================================================
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Relaxed limit to avoid false-positive blocking in dev
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: (req) => req.method === "OPTIONS", // Never throttle preflight checks!
-  message: {
-    success: false,
-    message: "Rate limit exceeded. Please wait 15 minutes before retrying.",
-  },
-});
-app.use(limiter);
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Accept",
+    ],
+  })
+);
 
-// =========================================================================
-// 4. REQUEST PARSERS
-// =========================================================================
+// 3. Rate Limiting
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 1000,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => req.method === "OPTIONS",
+  })
+);
+
+// 4. Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// =========================================================================
-// 5. HEALTH CHECK & API ROUTES
-// =========================================================================
+// 5. Health Check
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "Server is healthy and running",
-    timestamp: new Date().toISOString(),
+    message: "Server is running",
   });
 });
 
+// 6. API Routes
 app.use("/api/v1", MainRouter);
 
-// =========================================================================
-// 6. GLOBAL ERROR HANDLER
-// =========================================================================
+// 7. Global Error Handler
 app.use(GlobalError);
 
 export default app;
