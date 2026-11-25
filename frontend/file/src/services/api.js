@@ -14,7 +14,7 @@ import axios from "axios";
 // otherwise defaults to the deployed Vercel backend.
 const API_BASE_URL = 
   import.meta.env.VITE_API_URL || 
-  "https://e-commerce-grocery-website-5m9l-j510qymge.vercel.app";
+  "https://e-commerce-grocery-website-kf2x.vercel.app";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
