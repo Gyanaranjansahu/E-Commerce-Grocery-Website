@@ -24,7 +24,8 @@ const allowedOrigins = [
   "https://e-commerce-grocery-website-six.vercel.app",
   "https://e-commerce-grocery-website-tau.vercel.app",
   "https://e-commerce-grocery-website-beta.vercel.app",
-  "https://e-commerce-grocery-website-iota.vercel.app"
+  "https://e-commerce-grocery-website-iota.vercel.app",
+  "https://e-commerce-grocery-website-jw2v0je2k-gyanaranjansahus-projects.vercel.app"
 ];
 
 const corsOptions = {
