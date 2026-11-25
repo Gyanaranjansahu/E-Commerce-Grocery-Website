@@ -20,6 +20,7 @@ const allowedOrigins = [
   "https://e-commerce-grocery-website-beta.vercel.app",
   "https://e-commerce-grocery-website-iota.vercel.app",
   "https://e-commerce-grocery-website-jw2v0je2k-gyanaranjansahus-projects.vercel.app",
+  "https://e-commerce-grocery-website-yueeujc2p-gyanaranjansahus-projects.vercel.app",
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
