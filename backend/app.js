@@ -1,16 +1,13 @@
-import dns from "dns"
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { rateLimit } from "express-rate-limit";
-
+import dns from "dns"
 import connectDb from "./config/db.js";
 import MainRouter from "./router/Router.js";
 import GlobalError from "./Error.js";
 dns.setServers(["8.8.8.8","1.1.1.1"])
-await connectDb()
-   
 const app = express();
 
 const allowedOrigins = [
@@ -34,14 +31,7 @@ app.use(
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
-    methods: [
-      "GET",
-      "POST",
-      "PUT",
-      "PATCH",
-      "DELETE",
-      "OPTIONS",
-    ],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
       "Authorization",
@@ -76,21 +66,17 @@ app.get("/", (req, res) => {
   });
 });
 
-// Database connection middleware
+// Connect to MongoDB before API requests
 app.use("/api/v1", async (req, res, next) => {
   try {
     await connectDb();
     next();
   } catch (error) {
-    console.error("Database middleware error:", error.message);
+    console.error("MongoDB connection error:", error);
 
-    res.status(503).json({
+    return res.status(503).json({
       success: false,
-      message: "Database connection failed",
-      error:
-        process.env.NODE_ENV === "production"
-          ? "Please try again later"
-          : error.message,
+      message: "Database temporarily unavailable",
     });
   }
 });
