@@ -118,8 +118,8 @@ export default function Footer() {
               <li><a href="#" className="hover:text-white transition">Bengaluru Hubs</a></li>
               <li><a href="#" className="hover:text-white transition">Delhi-NCR Delivery Zones</a></li>
               <li><a href="#" className="hover:text-white transition">Mumbai & Pune Coverage</a></li>
-              <li><a href="#" className="hover:text-white transition">Pause / Resume Subscription</a></li>
-              <li><a href="#" className="hover:text-white transition">Refund & Bruised Crop Policy</a></li>
+              <li><Link to="/orders" className="hover:text-white transition">My Orders & Tracking</Link></li>
+              <li><Link to="/terms" className="hover:text-white transition">Refund & Bruised Crop Policy</Link></li>
             </ul>
           </div>
 
@@ -151,7 +151,7 @@ export default function Footer() {
           <div className="flex gap-6">
             <Link to="/terms" className="hover:text-[#9DA89D] transition">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-[#9DA89D] transition">Terms of Service</Link>
-            <Link to="/terms" className="hover:text-[#9DA89D] transition">Delivery & Subscription Guidelines</Link>
+            <Link to="/terms" className="hover:text-[#9DA89D] transition">Delivery & Refund Guidelines</Link>
           </div>
         </div>
 

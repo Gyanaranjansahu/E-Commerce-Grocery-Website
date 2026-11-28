@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Costume from '../services/costume.js';
 import { GlobalContext } from '../context/Usecontext.jsx';
+import { toast } from 'sonner';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -26,11 +27,16 @@ const AdminLogin = () => {
       const res = await handleLogin(data);
       if (res) {
         if (admins) await admins();
-        if (curr_user) await curr_user();
+        const user = curr_user ? await curr_user() : null;
+        if (user && user.role !== "admin") {
+          toast.error("Access denied. This account does not possess administrator privileges.");
+          return;
+        }
+        toast.success("Welcome back, Administrator");
         navigate('/admin/dashboard', { replace: true });
       }
     } catch (err) {
-      console.error('Login failed:', err);
+      toast.error(err.message || 'Authentication failed');
     }
   }
 

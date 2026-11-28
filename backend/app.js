@@ -10,10 +10,7 @@ import GlobalError from "./Error.js";
 
 const app = express();
 
-// 1. Database
-connectDb();
-
-// 2. CORS
+// 2. CORS - Works seamlessly in both local development & Vercel production
 const allowedOrigins = [
   "https://e-commerce-grocery-website-iota.vercel.app",
   "https://e-commerce-grocery-website-six.vercel.app",
@@ -24,26 +21,25 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow non-browser requests (Postman, curl, backend-to-backend)
+    // Allow non-browser requests (Postman, curl, server-to-server)
     if (!origin) return callback(null, true);
 
     try {
       const parsedUrl = new URL(origin);
       const hostname = parsedUrl.hostname;
 
-      // Allow all localhost ports and any vercel preview/production domain
+      // Allow all localhost/127.0.0.1 ports in development, and *.vercel.app in production
       const isAllowed =
-        allowedOrigins.includes(origin) ||
         hostname === "localhost" ||
         hostname === "127.0.0.1" ||
-        hostname.endsWith(".vercel.app");
+        hostname.endsWith(".vercel.app") ||
+        allowedOrigins.includes(origin);
 
       if (isAllowed) {
         return callback(null, true);
       }
 
-      console.warn("CORS blocked origin:", origin);
-      // Return false without throwing Error so Express doesn't crash into 500
+      console.warn("[CORS Blocked]:", origin);
       return callback(null, false);
     } catch {
       return callback(null, false);
@@ -61,13 +57,13 @@ const corsOptions = {
   optionsSuccessStatus: 200,
 };
 
+// Mount CORS (automatically handles OPTIONS preflights for all routes)
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
 
-// 3. Rate Limiting
+// 3. Rate Limiter (Relaxes limits to prevent false-positives in dev & prod)
 app.use(
   rateLimit({
-    windowMs: 15 * 60 * 1000,
+    windowMs: 30 * 60 * 1000,
     max: 1000,
     standardHeaders: true,
     legacyHeaders: false,
@@ -75,7 +71,7 @@ app.use(
   })
 );
 
-// 4. Middlewares
+// 4. Request Parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -84,12 +80,24 @@ app.use(cookieParser());
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "Server is running",
+    message: "Server is running smoothly",
+    environment: process.env.NODE_ENV || "development",
   });
 });
 
-// 6. API Routes
-app.use("/api/v1", MainRouter);
+// 6. Mount API Routes
+app.use(
+  "/api/v1",
+  async (req, res, next) => {
+    try {
+      await connectDb();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  },
+  MainRouter
+);
 
 // 7. Global Error Handler
 app.use(GlobalError);

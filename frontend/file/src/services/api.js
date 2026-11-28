@@ -10,11 +10,11 @@ import axios from "axios";
 // 3. Clear, simple async functions that return the response payload or throw a readable error.
 // =========================================================================
 
-// Dynamically resolve API URL: uses VITE_API_URL env variable if present,
-// otherwise defaults to the deployed Vercel backend.
-const API_BASE_URL = 
-  import.meta.env.VITE_API_URL || 
-  "https://e-commerce-grocery-website-kf2x.vercel.app";
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV
+    ? "http://localhost:5000"
+    : "https://e-commerce-grocery-website-kf2x.vercel.app");
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -281,17 +281,27 @@ export async function getAdmin() {
   }
 }
 
-// 18. Orders: Place new order
-export async function createOrder(orderData) {
+// 18. Payments: Create a Razorpay order
+export async function createPaymentOrder(shippingAddress) {
   try {
-    const response = await api.post("/api/v1/order", orderData);
+    const response = await api.post("/api/v1/payment/create-order", { shippingAddress });
     return response.data;
   } catch (err) {
-    throw new Error(getErrorMessage(err, "Failed to place order"));
+    throw new Error(getErrorMessage(err, "Unable to start online payment"));
   }
 }
 
-// 19. Orders: Get authenticated user's orders
+// 19. Payments: Verify a Razorpay payment
+export async function verifyPayment(paymentDetails) {
+  try {
+    const response = await api.post("/api/v1/payment/verify", paymentDetails);
+    return response.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Payment verification failed"));
+  }
+}
+
+// 20. Orders: Get authenticated user's orders
 export async function getMyOrders() {
   try {
     const response = await api.get("/api/v1/myOrders");
@@ -301,7 +311,7 @@ export async function getMyOrders() {
   }
 }
 
-// 20. Admin: Get all customer orders
+// 21. Admin: Get all customer orders
 export async function getAllOrders() {
   try {
     const response = await api.get("/api/v1/admin/orders");
@@ -311,7 +321,7 @@ export async function getAllOrders() {
   }
 }
 
-// 21. Admin: Update status of an order
+// 22. Admin: Update status of an order
 export async function updateOrderStatus(orderId, orderStatus) {
   try {
     const response = await api.put("/api/v1/admin/orderStatus", { orderId, orderStatus });
@@ -321,7 +331,7 @@ export async function updateOrderStatus(orderId, orderStatus) {
   }
 }
 
-// 22. Admin: Get all registered customers
+// 23. Admin: Get all registered customers
 export async function getAllUsers() {
   try {
     const response = await api.get("/api/v1/admin/users");
@@ -331,7 +341,7 @@ export async function getAllUsers() {
   }
 }
 
-// 23. Admin: Delete product
+// 24. Admin: Delete product
 export async function deleteProduct(productId) {
   try {
     const response = await api.delete("/api/v1/admin/deleteProduct", { data: { productId } });

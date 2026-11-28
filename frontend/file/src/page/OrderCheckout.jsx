@@ -1,35 +1,43 @@
 import React, { useContext, useState, useEffect } from "react";
 import {
-  Banknote,
-  Truck,
   ShieldCheck,
   ArrowLeft,
-  CheckCircle2,
   Clock,
-  Sparkles,
   ShoppingBag,
   MapPin,
-  Phone,
-  User as UserIcon,
+  CreditCard,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/Nav.jsx";
 import Footer from "../components/Footer.jsx";
 import { GlobalContext } from "../context/Usecontext.jsx";
-import Costume from "../services/costume.js";
+import { createPaymentOrder, verifyPayment } from "../services/api.js";
 import { toast } from "sonner";
+
+function loadRazorpayScript() {
+  return new Promise((resolve, reject) => {
+    if (window.Razorpay) {
+      resolve();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Unable to load Razorpay checkout."));
+    document.body.appendChild(script);
+  });
+}
 
 export default function OrderCheckout() {
   const { cart, user, fetchCart } = useContext(GlobalContext);
-  const { handleCreateOrder, loading } = Costume();
   const navigate = useNavigate();
+  const [paying, setPaying] = useState(false);
+  const [confirmedPricing, setConfirmedPricing] = useState(null);
 
-  // Normalize cart items
   const cartItems = Array.isArray(cart)
     ? cart
-    : Array.isArray(cart?.products)
-      ? cart.products
-      : [];
+    : Array.isArray(cart?.products) ? cart.products : [];
 
   const [address, setAddress] = useState({
     name: user?.name || "",
@@ -40,7 +48,6 @@ export default function OrderCheckout() {
     pincode: user?.pin || "",
   });
 
-  // Re-sync with user profile if available
   useEffect(() => {
     if (user) {
       setAddress((prev) => ({
@@ -54,45 +61,72 @@ export default function OrderCheckout() {
     }
   }, [user]);
 
-  // Calculations
   const subtotal = cartItems.reduce((acc, item) => {
-    const price =
-      typeof item.productId === "object"
-        ? item.productId?.price || 0
-        : item.price || 0;
-    return acc + price * (item.quantity || 1);
+    const product = item.productId || item;
+    return acc + (Number(product.price || item.price) || 0) * (Number(item.quantity) || 1);
   }, 0);
 
   const delivery = subtotal > 500 || subtotal === 0 ? 0 : 40;
   const totalAmount = subtotal + delivery;
+  const displayedSubtotal = confirmedPricing?.subtotal ?? subtotal;
+  const displayedDelivery = confirmedPricing?.delivery ?? delivery;
+  const displayedTotal = confirmedPricing?.totalAmount ?? totalAmount;
 
-  const handlePlaceOrder = async (e) => {
-    e.preventDefault();
-
-    if (!address.name || !address.phone || !address.address || !address.city || !address.pincode) {
-      toast.error("Please complete all shipping address fields");
-      return;
-    }
-
-    if (cartItems.length === 0) {
-      toast.error("Your basket is empty. Add products before placing an order.");
-      navigate("/shop");
-      return;
-    }
+  const handlePayment = async (event) => {
+    event.preventDefault();
+    setPaying(true);
 
     try {
-      const payload = {
-        shippingAddress: address,
-        paymentMethod: "COD", // Strict Cash on Delivery Only
-      };
+      await loadRazorpayScript();
+      const {
+        keyId,
+        razorpayOrder,
+        subtotal: serverSubtotal,
+        delivery: serverDelivery,
+        totalAmount: serverTotal,
+      } = await createPaymentOrder(address);
+      setConfirmedPricing({
+        subtotal: serverSubtotal,
+        delivery: serverDelivery,
+        totalAmount: serverTotal,
+      });
+      const checkout = new window.Razorpay({
+        key: keyId,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        name: "Veda Organics",
+        description: "Grocery order payment",
+        order_id: razorpayOrder.id,
+        prefill: {
+          name: address.name,
+          email: user?.email || "",
+          contact: address.phone,
+        },
+        theme: { color: "#1B3821" },
+        handler: async (paymentDetails) => {
+          try {
+            await verifyPayment(paymentDetails);
+            await fetchCart();
+            toast.success("Payment successful. Your order is placed.");
+            navigate("/orders", { replace: true });
+          } catch (error) {
+            setPaying(false);
+            toast.error(error.message || "Payment verification failed.");
+          }
+        },
+        modal: {
+          ondismiss: () => setPaying(false),
+        },
+      });
 
-      const res = await handleCreateOrder(payload);
-      if (res?.success) {
-        if (fetchCart) await fetchCart();
-        navigate("/orders", { replace: true });
-      }
-    } catch (err) {
-      console.error("Order placement failed:", err);
+      checkout.on("payment.failed", (event) => {
+        setPaying(false);
+        toast.error(event.error?.description || "Payment failed. Please try again.");
+      });
+      checkout.open();
+    } catch (error) {
+      setPaying(false);
+      toast.error(error.message || "Unable to start online payment.");
     }
   };
 
@@ -142,7 +176,7 @@ export default function OrderCheckout() {
             </Link>
           </div>
 
-          <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <form onSubmit={handlePayment} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left Column: Address & Payment (7 cols) */}
             <div className="lg:col-span-7 space-y-6">
               {/* Delivery Address Card */}
@@ -240,33 +274,26 @@ export default function OrderCheckout() {
                 </div>
               </div>
 
-              {/* PAYMENT METHOD: STRICT CASH ON DELIVERY ONLY */}
-              <div className="bg-white border-2 border-[#1B3821] rounded-xl p-5 sm:p-6 shadow-xs space-y-3">
+              <div className="bg-white border border-stone-200 rounded-xl p-5 sm:p-6 shadow-xs space-y-3">
                 <div className="flex items-center justify-between border-b border-stone-100 pb-3">
                   <div className="flex items-center gap-2">
-                    <Banknote className="w-5 h-5 text-[#1B3821]" />
+                    <CreditCard className="w-5 h-5 text-[#1B3821]" />
                     <h2 className="text-sm font-serif font-bold text-stone-900 uppercase tracking-wider">
                       2. Payment Method
                     </h2>
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-emerald-100 text-emerald-900 rounded">
-                    Cash On Delivery Only
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-stone-100 text-stone-600 rounded">
+                    Online
                   </span>
                 </div>
 
-                <div className="p-4 bg-[#F5F8F5] border border-[#CBE0CE] rounded-lg flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-[#1B3821] text-white flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                  </div>
-                  <div className="space-y-1">
-                    <h4 className="text-xs font-bold text-[#161B16] uppercase tracking-wide">
-                      Cash on Delivery (COD) Selected
-                    </h4>
-                    <p className="text-xs text-stone-600 leading-relaxed">
-                      Pay easily in cash at the time of morning harvest delivery at your doorstep (6:30 AM drop).
-                      No online prepayments or bank transfers required.
-                    </p>
-                  </div>
+                <div className="p-4 bg-stone-50 border border-stone-200 rounded-lg">
+                  <p className="text-xs font-semibold text-stone-800">
+                    Pay securely online with Razorpay.
+                  </p>
+                  <p className="text-xs text-stone-600 mt-1">
+                    Your basket total is calculated from the latest product prices.
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-2 pt-1 text-[11px] text-stone-500">
@@ -318,33 +345,33 @@ export default function OrderCheckout() {
                 <div className="border-t border-stone-100 pt-3 space-y-2 text-xs text-stone-600">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span className="font-semibold text-stone-900">₹{subtotal}</span>
+                    <span className="font-semibold text-stone-900">₹{displayedSubtotal}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>Dawn Delivery</span>
                     <span>
-                      {delivery === 0 ? (
+                      {displayedDelivery === 0 ? (
                         <span className="text-emerald-700 font-semibold text-[10px] uppercase tracking-wider">
                           Free
                         </span>
                       ) : (
-                        `₹${delivery}`
+                        `₹${displayedDelivery}`
                       )}
                     </span>
                   </div>
                   <div className="border-t border-stone-100 pt-3 flex justify-between text-base font-bold text-stone-900">
                     <span>Grand Total Payable</span>
-                    <span className="text-[#1B3821]">₹{totalAmount}</span>
+                    <span className="text-[#1B3821]">₹{displayedTotal}</span>
                   </div>
                 </div>
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={paying}
                   className="w-full py-3 bg-[#1B3821] hover:bg-[#122817] text-white text-xs font-semibold uppercase tracking-wider rounded-lg transition cursor-pointer shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  <Banknote className="w-4 h-4" />
-                  <span>{loading ? "Placing Order..." : "Confirm Order (Cash on Delivery)"}</span>
+                  <CreditCard className="w-4 h-4" />
+                  <span>{paying ? "Opening secure checkout..." : `Pay ₹${displayedTotal} with Razorpay`}</span>
                 </button>
 
                 <div className="flex items-center justify-center gap-1.5 text-[10px] text-stone-500 pt-1">

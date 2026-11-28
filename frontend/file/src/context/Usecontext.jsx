@@ -85,8 +85,9 @@ export function Global({ children }) {
 
       if (currentUser) {
         setUser(currentUser);
-        // Automatically fetch cart for authenticated session
+        // Automatically fetch cart & wishlist for authenticated session
         fetchCart();
+        getWishlist();
         if (currentUser.role === "admin") {
           admins();
         }
@@ -238,6 +239,15 @@ export function Global({ children }) {
     }
   };
 
+  const removeFromWishlist = async (productId) => {
+    try {
+      await toogleWishlist(productId);
+      await getWishlist();
+    } catch (err) {
+      console.error("Wishlist remove error:", err);
+    }
+  };
+
   // Initial Load: check session and load catalog
   useEffect(() => {
     curr_user();
@@ -285,6 +295,8 @@ export function Global({ children }) {
         wishdata,
         loadWish,
         getWishlist,
+        removeFromWishlist,
+        toggleWishlist: removeFromWishlist,
       }}
     >
       {children}

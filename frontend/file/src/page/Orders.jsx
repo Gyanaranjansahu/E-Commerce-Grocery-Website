@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import GroceryLoader from "../components/Loading.jsx";
 
 const statusConfig = {
+  PAYMENT_PENDING: { label: "Awaiting Payment", bg: "bg-amber-50 text-amber-800 border-amber-200", icon: Clock },
   PLACED: { label: "Order Placed", bg: "bg-amber-50 text-amber-800 border-amber-200", icon: Clock },
   CONFIRMED: { label: "Confirmed", bg: "bg-blue-50 text-blue-800 border-blue-200", icon: CheckCircle },
   SHIPPED: { label: "Dispatched & On the Way", bg: "bg-indigo-50 text-indigo-800 border-indigo-200", icon: Truck },

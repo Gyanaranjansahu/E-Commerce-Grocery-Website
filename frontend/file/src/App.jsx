@@ -47,6 +47,8 @@ const App = () => {
               <CollectionPage />
             </Protection>
           } />
+          <Route path="/subscription" element={<Navigate to="/shop" replace />} />
+          <Route path="/subscriptions" element={<Navigate to="/shop" replace />} />
           <Route path="/our-story" element={<OurStory />} />
           <Route path="/purity" element={<LabPurityReport />} />
           <Route path="/terms" element={<Terms />} />

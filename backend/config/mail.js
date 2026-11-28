@@ -1,220 +1,75 @@
-
 import nodemailer from "nodemailer";
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+// Simple, reliable Nodemailer helper for sending OTPs
+function getTransporter() {
+  const user = process.env.EMAIL_USER;
+  // Strip whitespace from App Passwords (e.g. "abcd efgh ijkl mnop" -> "abcdefghijklmnop")
+  const pass = (process.env.EMAIL_PASS || "").replace(/\s+/g, "");
 
-function sendEmail(to, otp) {
+  if (!user || !pass) {
+    console.error(
+      "[Nodemailer Error] EMAIL_USER or EMAIL_PASS is missing in environment variables!\n" +
+      "If running locally, check backend/.env.\n" +
+      "If running on Vercel, add EMAIL_USER and EMAIL_PASS to Vercel Project Settings > Environment Variables."
+    );
+  }
+
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: { user, pass },
+  });
+}
+
+/**
+ * Send 6-digit OTP verification email
+ * @param {string} to - Recipient email
+ * @param {string|number} otp - 6-digit OTP code
+ */
+async function sendEmail(to, otp) {
+  const user = process.env.EMAIL_USER;
+  const transporter = getTransporter();
+
   const mailOptions = {
-    from: `"VEDA ORGANIC🍎" <${process.env.EMAIL_USER}>`,
+    from: `"VEDA Organics" <${user}>`,
     to,
-    subject: "Verify Your Email - OTP",
-
+    subject: `Your Verification Code: ${otp} - VEDA Organics`,
+    text: `Your VEDA Organics verification code is ${otp}. It will expire in 3 minutes. If you did not request this, please ignore this email.`,
     html: `
-      <div style="
-        margin: 0;
-        padding: 35px 15px;
-        background: #f3f8f2;
-        font-family: Arial, Helvetica, sans-serif;
-      ">
+      <div style="max-width: 480px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #ffffff; border: 1px solid #E8E6DF; border-radius: 12px; overflow: hidden; padding: 32px 24px; text-align: center;">
+        <h2 style="margin: 0; color: #1B3821; font-size: 24px; letter-spacing: 2px;">VEDA ORGANICS</h2>
+        <p style="margin: 4px 0 24px; color: #7A827A; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;">Freshness From The Farm</p>
 
-        <div style="
-          max-width: 500px;
-          margin: auto;
-          background: #ffffff;
-          border-radius: 14px;
-          overflow: hidden;
-          border: 1px solid #e5eee2;
-        ">
-
-          <!-- Header -->
-          <div style="
-            padding: 24px;
-            text-align: center;
-            background: #ffffff;
-          ">
-            <h2 style="
-              margin: 0;
-              color: #166534;
-              font-size: 25px;
-              font-weight: 800;
-            ">
-              VEDA ORGANIC
-            </h2>
-
-            <p style="
-              margin: 7px 0 0;
-              color: #84a98c;
-              font-size: 11px;
-              letter-spacing: 2px;
-              font-weight: 600;
-            ">
-              FRESHNESS DELIVERED TO YOUR DOOR
-            </p>
-          </div>
-
-          <!-- Grocery Image -->
-          <div style="padding: 0;">
-            <img
-              src=""https://images.unsplash.com/photo-1542838132-92c53300491e";"
-              alt="Fresh fruits and vegetables"
-              style="
-                display: block;
-                width: 100%;
-                height: 220px;
-                object-fit: cover;
-                border: 0;
-              "
-            />
-          </div>
-
-          <!-- Main Content -->
-          <div style="
-            padding: 35px 30px;
-            text-align: center;
-          ">
-
-            <div style="
-              width: 55px;
-              height: 55px;
-              margin: 0 auto 18px;
-              background: #ecfdf3;
-              border-radius: 50%;
-              line-height: 55px;
-              font-size: 27px;
-            ">
-              🥬
-            </div>
-
-            <h1 style="
-              margin: 0 0 12px;
-              color: #14532d;
-              font-size: 26px;
-            ">
-              Verify Your Email
-            </h1>
-
-            <p style="
-              margin: 0 auto 28px;
-              color: #64748b;
-              font-size: 14px;
-              line-height: 1.8;
-            ">
-              Welcome! We're happy to have you with us.
-              Please use the verification code below
-              to verify your email address.
-            </p>
-
-            <!-- OTP Box -->
-            <div style="
-              padding: 25px 15px;
-              background: #f0fdf4;
-              border: 1px dashed #86efac;
-              border-radius: 12px;
-            ">
-
-              <p style="
-                margin: 0 0 12px;
-                color: #15803d;
-                font-size: 11px;
-                font-weight: 700;
-                letter-spacing: 2px;
-              ">
-                YOUR VERIFICATION CODE
-              </p>
-
-              <div style="
-                color: #166534;
-                font-size: 36px;
-                font-weight: 800;
-                letter-spacing: 9px;
-                font-family: monospace;
-              ">
-                ${otp}
-              </div>
-
-            </div>
-
-            <!-- Expiry Notice -->
-            <div style="
-              margin-top: 20px;
-              padding: 13px;
-              background: #fff7ed;
-              border-radius: 8px;
-            ">
-              <p style="
-                margin: 0;
-                color: #c2410c;
-                font-size: 12px;
-                font-weight: 600;
-              ">
-                ⏳ This verification code expires in 3 minutes.
-              </p>
-            </div>
-
-            <p style="
-              margin: 25px 0 0;
-              color: #94a3b8;
-              font-size: 12px;
-              line-height: 1.7;
-            ">
-              If you didn't request this code,
-              please ignore this email.
-            </p>
-
-          </div>
-
-          <!-- Footer -->
-          <div style="
-            padding: 23px 20px;
-            background: #f0fdf4;
-            border-top: 1px solid #dcfce7;
-            text-align: center;
-          ">
-
-            <p style="
-              margin: 0 0 8px;
-              color: #166534;
-              font-size: 13px;
-              font-weight: 700;
-            ">
-              GyanaStack - Freshness You Can Trust
-            </p>
-
-            <p style="
-              margin: 0;
-              color: #86a58d;
-              font-size: 11px;
-              line-height: 1.6;
-            ">
-              Fresh groceries, delivered with care.
-              <br />
-              This is an automated email. Please do not reply.
-            </p>
-
-          </div>
-
-        </div>
-
-        <p style="
-          margin: 18px auto 0;
-          color: #94a3b8;
-          font-size: 11px;
-          text-align: center;
-        ">
-          © ${new Date().getFullYear()} Grocery. All rights reserved.
+        <p style="color: #3C423C; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
+          Use the verification code below to verify your email address.
         </p>
 
+        <div style="background: #F0FDF4; border: 2px dashed #86EFAC; border-radius: 10px; padding: 18px 24px; margin: 20px 0; display: inline-block;">
+          <span style="font-family: monospace; font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #15803D;">${otp}</span>
+        </div>
+
+        <p style="color: #C2410C; font-size: 12px; font-weight: 600; margin: 16px 0 8px;">
+          ⏳ This code expires in 3 minutes.
+        </p>
+        <p style="color: #9DA89D; font-size: 11px; margin: 0;">
+          If you did not request this code, no action is needed.
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #F0EEE8; margin: 28px 0 16px;" />
+        <p style="color: #9DA89D; font-size: 10px; margin: 0;">
+          © ${new Date().getFullYear()} VEDA Organics. All rights reserved.
+        </p>
       </div>
     `,
   };
 
-  return transporter.sendMail(mailOptions);
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`[Nodemailer] OTP email successfully sent to ${to}: ${info.messageId}`);
+    return info;
+  } catch (error) {
+    console.error(`[Nodemailer] Failed to send email to ${to}:`, error.message);
+    throw error;
+  }
 }
 
 export default sendEmail;

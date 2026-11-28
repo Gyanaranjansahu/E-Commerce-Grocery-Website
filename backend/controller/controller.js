@@ -9,7 +9,11 @@ import fs from "fs";
 import ProductModel from "../model/product.js";
 import wishlistModel from "../model/wishlistModel.js";
 import Order from "../model/orderSchema.js";
-import { Verify } from "crypto";
+import {
+  createRazorpayOrder,
+  getRazorpayKeyId,
+  verifyRazorpaySignature,
+} from "../config/razorpay.js";
 class HandleController {
   static Register = async (req, res, next) => {
     try {
@@ -270,11 +274,19 @@ static Refresh = async (req, res, next) => {
       });
 
       // 6. Send the plain-text OTP via email
-      await sendEmail(email, otp);
+      try {
+        await sendEmail(email, otp);
+      } catch (mailError) {
+        console.error("[GenerateOtp Error]:", mailError.message);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to send OTP email. Please ensure EMAIL_USER and EMAIL_PASS are configured.",
+        });
+      }
 
       return res.status(200).json({
         success: true,
-        message: "OTP sent successfully",
+        message: "OTP sent successfully to " + email,
       });
     } catch (error) {
       next(error);
@@ -737,27 +749,174 @@ static deleteWish = async (req, res, next) => {
   }
 };
 
-  static createOrder = async (req, res, next) => {
+  static createPaymentOrder = async (req, res, next) => {
     try {
       const userId = req.user._id || req.user.id;
-      const { products, totalAmount, shippingAddress, paymentMethod } = req.body;
+      const shippingAddress = req.body?.shippingAddress;
+      const address = {
+        name: String(shippingAddress?.name || "").trim(),
+        phone: String(shippingAddress?.phone || "").trim(),
+        address: String(shippingAddress?.address || "").trim(),
+        city: String(shippingAddress?.city || "").trim(),
+        state: String(shippingAddress?.state || "Odisha").trim(),
+        pincode: String(shippingAddress?.pincode || "").trim(),
+      };
 
-      const newOrder = await Order.create({
+      if (!address.name || !address.phone || !address.address || !address.city || !address.pincode) {
+        return res.status(400).json({
+          success: false,
+          message: "Complete the required delivery address fields.",
+        });
+      }
+
+      const cart = await CartModel.findOne({ userId }).populate("products.productId");
+      if (!cart?.products?.length) {
+        return res.status(400).json({
+          success: false,
+          message: "Your basket is empty.",
+        });
+      }
+
+      const products = [];
+      for (const item of cart.products) {
+        const product = item.productId;
+        const price = Number(product?.price);
+        if (
+          !product?._id ||
+          !Number.isInteger(item.quantity) ||
+          item.quantity < 1 ||
+          !Number.isFinite(price) ||
+          price < 0
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: "A basket item is no longer available. Refresh your basket and try again.",
+          });
+        }
+
+        products.push({
+          product: product._id,
+          quantity: item.quantity,
+          price,
+        });
+      }
+
+      const subtotal = products.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      );
+      if (subtotal <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "The basket total must be greater than zero.",
+        });
+      }
+
+      const delivery = subtotal > 500 ? 0 : 40;
+      const totalAmount = Number((subtotal + delivery).toFixed(2));
+      const amount = Math.round(totalAmount * 100);
+      if (!Number.isSafeInteger(amount) || amount <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "The payment amount is invalid.",
+        });
+      }
+
+      const razorpayOrder = await createRazorpayOrder({
+        amount,
+        currency: "INR",
+        receipt: `order_${Date.now()}`,
+      });
+
+      await Order.create({
         user: userId,
         products,
         totalAmount,
-        shippingAddress,
-        paymentMethod: paymentMethod || "COD",
-        orderStatus: "PLACED",
+        shippingAddress: address,
+        paymentMethod: "RAZORPAY",
+        paymentStatus: "PENDING",
+        razorpayOrderId: razorpayOrder.id,
+        orderStatus: "PAYMENT_PENDING",
       });
-
-      // Clear user cart
-      await CartModel.findOneAndUpdate({ userId }, { $set: { products: [] } });
 
       return res.status(201).json({
         success: true,
-        message: "Order placed successfully",
-        order: newOrder,
+        keyId: getRazorpayKeyId(),
+        subtotal,
+        delivery,
+        totalAmount,
+        razorpayOrder: {
+          id: razorpayOrder.id,
+          amount: razorpayOrder.amount,
+          currency: razorpayOrder.currency,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static verifyPayment = async (req, res, next) => {
+    try {
+      const userId = req.user._id || req.user.id;
+      const {
+        razorpay_order_id: razorpayOrderId,
+        razorpay_payment_id: razorpayPaymentId,
+        razorpay_signature: razorpaySignature,
+      } = req.body || {};
+
+      if (
+        ![razorpayOrderId, razorpayPaymentId, razorpaySignature].every(
+          (value) => typeof value === "string" && value.length > 0
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Payment verification details are incomplete.",
+        });
+      }
+
+      const order = await Order.findOne({
+        user: userId,
+        razorpayOrderId,
+      });
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: "Payment order was not found.",
+        });
+      }
+
+      if (!verifyRazorpaySignature(razorpayOrderId, razorpayPaymentId, razorpaySignature)) {
+        return res.status(400).json({
+          success: false,
+          message: "Payment verification failed.",
+        });
+      }
+
+      if (order.paymentStatus === "PAID") {
+        if (order.razorpayPaymentId !== razorpayPaymentId) {
+          return res.status(409).json({
+            success: false,
+            message: "This order has already been paid.",
+          });
+        }
+      } else {
+        order.paymentStatus = "PAID";
+        order.razorpayPaymentId = razorpayPaymentId;
+        order.orderStatus = "PLACED";
+        await order.save();
+      }
+
+      await CartModel.findOneAndUpdate(
+        { userId },
+        { $set: { products: [] } }
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Payment verified and order placed.",
+        order,
       });
     } catch (error) {
       next(error);
@@ -799,11 +958,53 @@ static deleteWish = async (req, res, next) => {
   static updateOrderStatus = async (req, res, next) => {
     try {
       const { orderId, orderStatus } = req.body;
-      const order = await Order.findByIdAndUpdate(
-        orderId,
-        { $set: { orderStatus } },
-        { new: true }
-      );
+      const allowedStatuses = [
+        "PAYMENT_PENDING",
+        "PLACED",
+        "CONFIRMED",
+        "SHIPPED",
+        "DELIVERED",
+        "CANCELLED",
+      ];
+
+      if (!allowedStatuses.includes(orderStatus)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid order status.",
+        });
+      }
+
+      const order = await Order.findById(orderId);
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: "Order not found.",
+        });
+      }
+
+      if (
+        orderStatus === "PAYMENT_PENDING" &&
+        order.orderStatus !== "PAYMENT_PENDING"
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Payment pending is not a valid status change.",
+        });
+      }
+
+      if (
+        order.paymentMethod === "RAZORPAY" &&
+        order.paymentStatus !== "PAID" &&
+        !["PAYMENT_PENDING", "CANCELLED"].includes(orderStatus)
+      ) {
+        return res.status(409).json({
+          success: false,
+          message: "Payment must be completed before processing this order.",
+        });
+      }
+
+      order.orderStatus = orderStatus;
+      await order.save();
 
       return res.status(200).json({
         success: true,

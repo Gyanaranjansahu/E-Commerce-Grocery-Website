@@ -68,7 +68,7 @@ const{total,user,setUser }=useContext(GlobalContext)
             {/* Desktop Navigation Links */}
             <nav className="hidden xl:flex items-center gap-6 text-xs font-semibold uppercase tracking-wider text-[#3C423C] mr-2">
               <Link to="/shop" className="hover:text-[#1B3821] transition">Shop Harvest</Link>
-              <Link to="/subscription" className="hover:text-[#1B3821] transition">Milk Plan</Link>
+              <Link to="/our-story" className="hover:text-[#1B3821] transition">Our Story</Link>
               <Link to="/purity" className="hover:text-[#1B3821] transition">Lab Reports</Link>
             </nav>
 
@@ -109,8 +109,13 @@ const{total,user,setUser }=useContext(GlobalContext)
                     <p className="text-[10px] text-[#7A827A] truncate">{user.email}</p>
                   </div>
                   <Link to="/orders" className="block px-4 py-2 text-xs text-[#3C423C] hover:bg-[#F8F7F3]">My Orders</Link>
-                  <Link to="/subscriptions" className="block px-4 py-2 text-xs text-[#3C423C] hover:bg-[#F8F7F3]">Subscriptions</Link>
+                  <Link to="/wishlist" className="block px-4 py-2 text-xs text-[#3C423C] hover:bg-[#F8F7F3]">Wishlist</Link>
                   <Link to="/change-password" className="block px-4 py-2 text-xs text-[#3C423C] hover:bg-[#F8F7F3]">Change Password</Link>
+                  {user.role === "admin" && (
+                    <Link to="/admin/dashboard" className="block px-4 py-2 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border-t border-emerald-100">
+                      ⚡ Admin Portal
+                    </Link>
+                  )}
                   <Link to="/logout" className="block px-4 py-2 text-xs text-red-700 hover:bg-[#F8F7F3] border-t border-[#F0EEE8] mt-1">Sign Out</Link>
                 </div>
               </div>
@@ -184,7 +189,6 @@ const{total,user,setUser }=useContext(GlobalContext)
               {/* Navigation Links */}
               <nav className="flex flex-col space-y-4 text-sm font-semibold tracking-wider uppercase text-[#161B16]">
                 <Link to="/shop" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#1B3821]">Shop Harvest</Link>
-                <Link to="/subscription" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#1B3821]">Daily Milk Delivery</Link>
                 <Link to="/purity" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#1B3821]">Lab Purity Reports</Link>
                 <Link to="/our-story" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#1B3821]">Our Partner Farms</Link>
                 <Link to="/wishlist" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#1B3821]">Saved Favourites</Link>

@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import Costume from '../services/costume';
+import { toast } from 'sonner';
 
 const CreateProduct = () => {
-  const { handleCreate } = Costume();
+  const navigate = useNavigate();
+  const { handleCreate, loading } = Costume();
   const [selectedFile, setSelectedFile] = useState(null);
 
   const [data, setData] = useState({
     name: '',
     description: '',
     price: '',
-    quantity: '',
-    category: '',
+    quantity: '50',
+    category: 'Vegetables',
   });
 
   const { name, description, price, quantity, category } = data;
@@ -32,11 +35,21 @@ const CreateProduct = () => {
   async function handleForm(e) {
     e.preventDefault();
 
-    // Send simple data object directly
-    await handleCreate({
-      ...data,
-      image: selectedFile,
-    });
+    if (!name || !price || !category) {
+      toast.error('Please fill all required fields');
+      return;
+    }
+
+    try {
+      await handleCreate({
+        ...data,
+        image: selectedFile,
+      });
+      toast.success('Product published to catalog successfully!');
+      navigate('/admin/dashboard', { replace: true });
+    } catch (err) {
+      toast.error(err.message || 'Failed to create product');
+    }
   }
 
   return (
@@ -221,11 +234,18 @@ const CreateProduct = () => {
 
           {/* Action Footer */}
           <div className="pt-6 border-t border-slate-800/80 flex items-center justify-end gap-3">
+            <Link
+              to="/admin/dashboard"
+              className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm rounded-xl transition"
+            >
+              Cancel
+            </Link>
             <button
               type="submit"
-              className="px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-medium text-sm rounded-xl shadow-lg shadow-indigo-500/25 transition duration-200"
+              disabled={loading}
+              className="px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-medium text-sm rounded-xl shadow-lg shadow-indigo-500/25 transition duration-200 disabled:opacity-50 cursor-pointer"
             >
-              Publish Item
+              {loading ? 'Publishing...' : 'Publish Item'}
             </button>
           </div>
         </form>

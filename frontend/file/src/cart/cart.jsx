@@ -1,6 +1,7 @@
 import React from "react";
 import { Trash2, Plus, Minus, ArrowLeft, ShieldCheck, ShoppingBag } from "lucide-react";
 import Navbar from "../components/Nav.jsx";
+import Footer from "../components/Footer.jsx";
 import { useApp } from "../context/Usecontext.jsx";
 import { Link } from "react-router-dom";
 
@@ -199,12 +200,12 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <button
-                type="button"
-                className="w-full py-2.5 bg-[#1B3821] hover:bg-[#122817] text-white text-[11px] font-semibold uppercase tracking-wider transition rounded-xs cursor-pointer shadow-xs"
+              <Link
+                to="/order"
+                className="block text-center w-full py-2.5 bg-[#1B3821] hover:bg-[#122817] text-white text-[11px] font-semibold uppercase tracking-wider transition rounded-xs cursor-pointer shadow-xs"
               >
                 Proceed to Checkout
-              </button>
+              </Link>
 
               <div className="pt-2 flex items-center justify-center gap-1.5 text-[10px] text-stone-500">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#1B3821]" />
@@ -214,6 +215,10 @@ export default function CartPage() {
 
           </div>
         )}
+      </div>
+
+      <div className="mt-16">
+        <Footer />
       </div>
     </div>
   );

@@ -190,8 +190,8 @@ const FAQS = [
     a: 'Yes. Every batch carries a verified lab analysis report covering 32 safety parameters (A2 protein confirmation, zero oxytocin, zero antibiotics, zero chemical residue). You can inspect them publicly on our Lab Reports page.'
   },
   {
-    q: 'Can I pause or modify my daily milk subscription?',
-    a: 'Absolutely. You can pause, reschedule, or adjust daily milk quantities with one click from your account dashboard before 8:00 PM the previous evening.'
+    q: 'How do I reorder or schedule morning deliveries?',
+    a: 'You can easily place orders anytime before 9:00 PM for next-morning 6:30 AM drop. Repeat orders can be placed with one tap directly from your Orders page.'
   }
 ];
 
