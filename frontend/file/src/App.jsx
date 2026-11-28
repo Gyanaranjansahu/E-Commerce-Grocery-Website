@@ -22,7 +22,7 @@ const WishlistPage = lazy(() => import('./wishlist/wishlist.jsx'));
 const CreateProduct = lazy(() => import('./Admin/CreateProduct.jsx'));
 const AdminDashboard = lazy(() => import('./Admin/adminDashboard.jsx'));
 const Terms = lazy(() => import('./page/Terms.jsx'));
-
+  
 // 404 Fallback page
 const NotFound = () => (
   <div className="min-h-screen bg-[#FBFBFA] flex flex-col items-center justify-center p-6 text-center">
@@ -35,25 +35,25 @@ const NotFound = () => (
   </div>
 );
 
-const App = () => {
+const App = () => { 
   return (
     <div>
-      <Suspense fallback={<GroceryLoader />}>
+      <Suspense fallback={<GroceryLoader />}>  
         <Routes>
-          {/* Public Storefront */}
+          {/* Public Storefront */} 
           <Route path="/" element={<HomePage />} />
-          <Route path="/shop" element={
+          <Route path="/shop" element={  
             <Protection>
               <CollectionPage />
             </Protection>
           } />
           <Route path="/subscription" element={<Navigate to="/shop" replace />} />
           <Route path="/subscriptions" element={<Navigate to="/shop" replace />} />
-          <Route path="/our-story" element={<OurStory />} />
+          <Route path="/our-story" element={<OurStory />} />    
           <Route path="/purity" element={<LabPurityReport />} />
           <Route path="/terms" element={<Terms />} />
-          <Route path="/terms-and-conditions" element={<Terms />} />
-          <Route path="/terms-of-condition" element={<Terms />} />
+          <Route path="/terms-and-conditions" element={<Terms />} />  
+          <Route path="/terms-of-condition" element={<Terms />} />   
 
           {/* User Protected Routes */}
           <Route path="/wishlist" element={

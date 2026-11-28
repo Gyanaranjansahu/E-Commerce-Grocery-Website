@@ -5,7 +5,7 @@ export default function GroceryLoader({
   subtext = "Sourcing zero-pesticide produce directly to your kitchen",
 }) {
   const [currentFactIndex, setCurrentFactIndex] = useState(0);
-
+ 
   const facts = [
     "Cold-chain transport preserves 95% more vitamins.",
     "Harvested under 12 hours before arrival at your door.",

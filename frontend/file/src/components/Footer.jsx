@@ -9,7 +9,7 @@ import {
   MapPin, 
   Phone
 } from 'lucide-react';
-
+   
 export default function Footer() {
   return (
     <footer className="bg-[#161B16] text-[#E5E9E5] border-t border-[#1F261F] font-sans">

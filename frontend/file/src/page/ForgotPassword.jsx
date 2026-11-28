@@ -647,7 +647,7 @@ export default function ForgotPassword() {
             )}
           </>  
         )}
-
+                  
         {/* Footer Navigation */}
         <div className="pt-6 border-t border-stone-200 mt-6 flex justify-between items-center text-xs">
           <Link to="/login" className="text-stone-500 hover:text-emerald-950 flex items-center gap-1 font-medium">

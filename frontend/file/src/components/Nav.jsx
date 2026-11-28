@@ -107,7 +107,9 @@ const{total,user,setUser }=useContext(GlobalContext)
                   <div className="px-4 py-2 border-b border-[#F0EEE8]">
                     <p className="text-xs font-bold text-[#161B16]">{user.name}</p>
                     <p className="text-[10px] text-[#7A827A] truncate">{user.email}</p>
-                  </div>
+                  </div>                                
+
+                  
                   <Link to="/orders" className="block px-4 py-2 text-xs text-[#3C423C] hover:bg-[#F8F7F3]">My Orders</Link>
                   <Link to="/wishlist" className="block px-4 py-2 text-xs text-[#3C423C] hover:bg-[#F8F7F3]">Wishlist</Link>
                   <Link to="/change-password" className="block px-4 py-2 text-xs text-[#3C423C] hover:bg-[#F8F7F3]">Change Password</Link>

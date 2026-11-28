@@ -5,7 +5,7 @@ import Footer from '../components/Footer.jsx';
 import { useApp } from '../context/Usecontext.jsx';
 import Costume from '../services/costume.js';
 import { toast } from 'sonner';
-
+                    
 const CATEGORIES = [
   "All",
   "Dairy",
