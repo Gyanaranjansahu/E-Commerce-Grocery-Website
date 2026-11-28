@@ -10,8 +10,9 @@ import GlobalError from "./Error.js";
 
 const app = express();
 
-// 2. CORS - Works seamlessly in both local development & Vercel production
+// 1. Allowed frontend URLs
 const allowedOrigins = [
+  "http://localhost:5173",
   "https://e-commerce-grocery-website-iota.vercel.app",
   "https://e-commerce-grocery-website-six.vercel.app",
   "https://e-commerce-grocery-website-tau.vercel.app",
@@ -19,48 +20,46 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
-const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow non-browser requests (Postman, curl, server-to-server)
-    if (!origin) return callback(null, true);
-
-    try {
-      const parsedUrl = new URL(origin);
-      const hostname = parsedUrl.hostname;
-
-      // Allow all localhost/127.0.0.1 ports in development, and *.vercel.app in production
-      const isAllowed =
-        hostname === "localhost" ||
-        hostname === "127.0.0.1" ||
-        hostname.endsWith(".vercel.app") ||
-        allowedOrigins.includes(origin);
-
-      if (isAllowed) {
+// 2. CORS Configuration
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow Postman and server-to-server requests
+      if (!origin) {
         return callback(null, true);
       }
 
-      console.warn("[CORS Blocked]:", origin);
-      return callback(null, false);
-    } catch {
-      return callback(null, false);
-    }
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "Accept",
-    "X-Requested-With",
-    "Origin",
-  ],
-  optionsSuccessStatus: 200,
-};
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
 
-// Mount CORS (automatically handles OPTIONS preflights for all routes)
-app.use(cors(corsOptions));
+      console.log("CORS blocked origin:", origin);
+      return callback(new Error("Not allowed by CORS"));
+    },
 
-// 3. Rate Limiter (Relaxes limits to prevent false-positives in dev & prod)
+    credentials: true,
+
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS",
+    ],
+
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Accept",
+      "X-Requested-With",
+    ],
+
+    optionsSuccessStatus: 204,
+  })
+);
+
+// 3. Rate Limiter
 app.use(
   rateLimit({
     windowMs: 30 * 60 * 1000,
@@ -71,7 +70,7 @@ app.use(
   })
 );
 
-// 4. Request Parsers
+// 4. Body Parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -85,7 +84,7 @@ app.get("/", (req, res) => {
   });
 });
 
-// 6. Mount API Routes
+// 6. API Routes and Database Connection
 app.use(
   "/api/v1",
   async (req, res, next) => {
