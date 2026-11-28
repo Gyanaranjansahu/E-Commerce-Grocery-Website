@@ -5,6 +5,7 @@ import Navbar from '../components/Nav.jsx';
 import Footer from '../components/Footer.jsx';
 import { GlobalContext } from '../context/Usecontext.jsx';
 import Costume from '../services/costume.js';
+ import { toast } from 'sonner';
 
 export default function WishlistPage() {
   const { wishdata, removeFromWishlist, fetchCart } = useContext(GlobalContext);
@@ -18,8 +19,20 @@ export default function WishlistPage() {
     try {
       await handleCart(id);
       if (fetchCart) await fetchCart();
+      toast.success(`${product.name || 'Item'} added to basket`);
     } catch (err) {
-      console.error("Failed to add from wishlist to cart:", err);
+      toast.error(err.message || "Failed to add to basket");
+    }
+  };
+
+  const handleRemove = async (productId) => {
+    try {
+      if (removeFromWishlist) {
+        await removeFromWishlist(productId);
+        toast.info("Removed from wishlist");
+      }
+    } catch (err) {
+      toast.error("Failed to remove item");
     }
   };
 
@@ -119,12 +132,12 @@ export default function WishlistPage() {
 
                       <button
                         type="button"
-                        onClick={() => removeFromWishlist && removeFromWishlist(productId)}
+                        onClick={() => handleRemove(productId)}
                         className="p-2 text-stone-400 hover:text-rose-600 hover:bg-rose-50 border border-stone-200 rounded-md transition cursor-pointer"
                         title="Remove item"
                       >
                         <Trash2 className="w-4 h-4" />
-                      </button>
+ CD                     </button>
                     </div>
                   </div>
                 );

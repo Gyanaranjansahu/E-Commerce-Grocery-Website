@@ -40,7 +40,7 @@ const NAVIGATION_ITEMS = [
   { id: "customers", name: "Customers", icon: Users },
 ];
 
-const ORDER_STATUSES = ["PLACED", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED"];
+const ORDER_STATUSES = ["PAYMENT_PENDING", "PLACED", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED"];
 
 const CATEGORIES = [
   "Fruits",

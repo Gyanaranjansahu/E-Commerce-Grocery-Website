@@ -1,139 +1,287 @@
-import "dotenv/config";
 import nodemailer from "nodemailer";
 
-// Create reusable transporter with connection pooling and resilient auth
-const getTransporter = () => {
-  const user = (process.env.EMAIL_USER || "cc653510@gmail.com").trim();
-  // Strip any accidental spaces from Google App Password
-  const pass = (process.env.EMAIL_PASS || "lbaz wmjx efgz qkqy").replace(/\s+/g, "");
+// ==========================================
+// 1. GMAIL SMTP TRANSPORTER
+// ==========================================
+
+function getTransporter() {
+  const user = process.env.EMAIL_USER;
+  const pass = process.env.EMAIL_PASS?.replace(/\s+/g, "");
+
+  if (!user || !pass) {
+    throw new Error(
+      "EMAIL_USER or EMAIL_PASS is missing in environment variables"
+    );
+  }
 
   return nodemailer.createTransport({
-    service: "gmail",
     host: "smtp.gmail.com",
     port: 465,
     secure: true,
+
     auth: {
       user,
       pass,
     },
-    tls: {
-      rejectUnauthorized: false,
-    },
-    pool: true, // Reuse connections for high performance in production
-    maxConnections: 3,
-    maxMessages: 50,
+
+    connectionTimeout: 20000,
+    greetingTimeout: 20000,
+    socketTimeout: 30000,
   });
-};
+}
 
-const transporter = getTransporter();
+// ==========================================
+// 2. HTML ESCAPE
+// ==========================================
 
-// Verify connection configuration on server startup
-transporter.verify((error) => {
-  if (error) {
-    console.error("❌ Nodemailer SMTP Connection Error:", error.message);
-  } else {
-    console.log("✅ Nodemailer SMTP Server is ready to send emails");
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (char) => {
+    const entities = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+
+    return entities[char];
+  });
+}
+
+// ==========================================
+// 3. SEND OTP EMAIL
+// ==========================================
+
+async function sendEmail(to, otp) {
+  if (!to || !otp) {
+    throw new Error("Recipient email and OTP are required");
   }
-});
 
-/**
- * Send OTP Verification / Password Reset Email
- * @param {string} to - Recipient email address
- * @param {string} otp - 6 digit verification code
- * @param {string} subject - Email subject line
- */
-export async function sendEmail(
-  to,
-  otp,
-  subject = "Password Reset Verification Code - Veda Organics"
-) {
-  const cleanTo = (to || "").trim().toLowerCase();
-  const senderEmail = (process.env.EMAIL_USER || "cc653510@gmail.com").trim();
+  const user = process.env.EMAIL_USER;
+  const transporter = getTransporter();
+
+  const safeOtp = escapeHtml(otp);
+  const year = new Date().getFullYear();
 
   const mailOptions = {
-    from: `"Veda Organics" <${senderEmail}>`,
-    to: cleanTo,
-    subject: subject,
-    text: `Your Veda Organics verification code is: ${otp}. It expires in 5 minutes. Do not share this code with anyone.`,
+    from: `"VEDA Organics" <${user}>`,
+    to,
+
+    subject: "Your VEDA Organics Verification Code",
+
+    text: `
+Welcome to VEDA Organics!
+
+Your verification code is ${otp}.
+
+This code expires in 3 minutes.
+
+Never share this code with anyone.
+    `.trim(),
+
     html: `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${subject}</title>
-      </head>
-      <body style="margin: 0; padding: 0; background-color: #F7F7F5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #161B16;">
-        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F7F7F5; padding: 40px 10px;">
-          <tr>
-            <td align="center">
-              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 500px; background-color: #FFFFFF; border-radius: 12px; border: 1px solid #E6E4DD; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); overflow: hidden;">
-                
-                <!-- Brand Header -->
-                <tr>
-                  <td style="background-color: #1B3821; padding: 28px 32px; text-align: center;">
-                    <h1 style="margin: 0; font-family: Georgia, serif; font-size: 26px; color: #FFFFFF; letter-spacing: 2px;">VEDA</h1>
-                    <span style="font-size: 10px; color: #C4DFC7; text-transform: uppercase; letter-spacing: 3px; font-weight: 600;">Organics</span>
-                  </td>
-                </tr>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VEDA Organics OTP</title>
+</head>
 
-                <!-- Content Body -->
-                <tr>
-                  <td style="padding: 36px 32px 28px 32px; text-align: center;">
-                    <div style="display: inline-block; width: 48px; height: 48px; line-height: 48px; border-radius: 50%; background-color: #E8EFE8; margin-bottom: 16px; font-size: 22px;">
-                      🔐
-                    </div>
-                    <h2 style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600; color: #161B16;">
-                      Password Reset Code
-                    </h2>
-                    <p style="margin: 0 0 24px 0; font-size: 13px; line-height: 1.6; color: #6F756F;">
-                      We received a request to reset your password for your Veda Organics account. Use the 6-digit code below to set a new password.
-                    </p>
+<body style="
+  margin:0;
+  padding:0;
+  background:#050505;
+  font-family:Arial,Helvetica,sans-serif;
+">
 
-                    <!-- OTP Code Display Card -->
-                    <div style="background-color: #F8FAF8; border: 2px dashed #1B3821; border-radius: 8px; padding: 18px 24px; margin: 0 auto 24px auto; display: inline-block;">
-                      <span style="font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #1B3821;">
-                        ${otp}
-                      </span>
-                    </div>
+<table width="100%" cellpadding="0" cellspacing="0"
+  style="background:#050505;padding:40px 12px;">
 
-                    <!-- Expiration Notice -->
-                    <div style="margin-bottom: 24px;">
-                      <span style="display: inline-block; background-color: #FFF2F2; color: #D32F2F; font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 20px; border: 1px solid #FFCDD2;">
-                        ⏳ Valid for 5 minutes only
-                      </span>
-                    </div>
+<tr>
+<td align="center">
 
-                    <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #9DA89D;">
-                      If you did not request a password reset, you can safely ignore this email. Your password will remain unchanged.
-                    </p>
-                  </td>
-                </tr>
+<table width="100%" cellpadding="0" cellspacing="0"
+  style="
+    max-width:480px;
+    background:#111111;
+    border:1px solid #292929;
+    border-radius:16px;
+    overflow:hidden;
+  ">
 
-                <!-- Footer Strip -->
-                <tr>
-                  <td style="background-color: #FAFAF8; border-top: 1px solid #EFECE6; padding: 20px 32px; text-align: center; font-size: 11px; color: #8C948C;">
-                    <p style="margin: 0 0 4px 0;">This is an automated security email from Veda Organics Agro Products.</p>
-                    <p style="margin: 0;">Please do not reply to this email.</p>
-                  </td>
-                </tr>
+<tr>
+<td align="center" style="padding:38px 24px 20px;">
 
-              </table>
-            </td>
-          </tr>
-        </table>
-      </body>
-      </html>
+<h1 style="
+  color:#ffffff;
+  font-size:30px;
+  letter-spacing:4px;
+  margin:0;
+">
+VEDA
+</h1>
+
+<p style="
+  color:#c5a66b;
+  font-size:11px;
+  letter-spacing:5px;
+  margin:8px 0 0;
+">
+ORGANICS
+</p>
+
+<div style="
+  width:45px;
+  height:2px;
+  background:#c5a66b;
+  margin:25px auto 0;
+"></div>
+
+</td>
+</tr>
+
+<tr>
+<td align="center" style="padding:20px 28px 35px;">
+
+<h2 style="
+  color:#ffffff;
+  font-size:23px;
+  margin:0 0 15px;
+">
+Verify Your Email
+</h2>
+
+<p style="
+  color:#a3a3a3;
+  font-size:14px;
+  line-height:1.8;
+  margin:0 0 28px;
+">
+Thank you for choosing VEDA Organics.
+Use the verification code below to continue.
+</p>
+
+<table width="100%" cellpadding="0" cellspacing="0"
+  style="
+    background:#1b1b1b;
+    border:1px solid #c5a66b;
+    border-radius:12px;
+  ">
+
+<tr>
+<td align="center" style="padding:25px 10px;">
+
+<p style="
+  color:#999999;
+  font-size:10px;
+  letter-spacing:3px;
+  margin:0 0 14px;
+">
+YOUR VERIFICATION CODE
+</p>
+
+<p style="
+  color:#d9c28b;
+  font-size:34px;
+  font-weight:bold;
+  letter-spacing:9px;
+  margin:0;
+">
+${safeOtp}
+</p>
+
+</td>
+</tr>
+</table>
+
+<p style="
+  color:#d9c28b;
+  font-size:13px;
+  margin:25px 0 12px;
+">
+This code expires in 3 minutes.
+</p>
+
+<p style="
+  color:#777777;
+  font-size:12px;
+  line-height:1.7;
+  margin:0;
+">
+Never share this code with anyone.
+If you did not request this verification,
+you can safely ignore this email.
+</p>
+
+</td>
+</tr>
+
+<tr>
+<td align="center" style="
+  background:#0b0b0b;
+  border-top:1px solid #292929;
+  padding:22px 15px;
+">
+
+<p style="
+  color:#c5a66b;
+  font-size:12px;
+  font-weight:bold;
+  letter-spacing:2px;
+  margin:0 0 8px;
+">
+VEDA ORGANICS
+</p>
+
+<p style="
+  color:#666666;
+  font-size:10px;
+  line-height:1.7;
+  margin:0;
+">
+Freshness From The Farm
+<br>
+© ${year} VEDA Organics. All rights reserved.
+</p>
+
+</td>
+</tr>
+
+</table>
+
+</td>
+</tr>
+</table>
+
+</body>
+</html>
     `,
   };
 
   try {
+    // Verify SMTP connection before sending
+    await transporter.verify();
+
     const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Email sent successfully to ${cleanTo} (Message ID: ${info.messageId})`);
+
+    console.log(
+      `[Nodemailer] Email sent successfully. Message ID: ${info.messageId}`
+    );
+
     return info;
+
   } catch (error) {
-    console.error(`❌ Failed to send email to ${cleanTo}:`, error.message);
+    console.error("[Nodemailer Error]", {
+      code: error.code,
+      command: error.command,
+      message: error.message,
+    });
+
     throw error;
+
+  } finally {
+    transporter.close();
   }
 }
 

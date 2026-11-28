@@ -1,73 +1,102 @@
+import dns from "dns"
 import "dotenv/config";
 import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import { rateLimit } from "express-rate-limit";
+
+import connectDb from "./config/db.js";
 import MainRouter from "./router/Router.js";
 import GlobalError from "./Error.js";
-import cookieParser from "cookie-parser";
-import cors from "cors";
-import { rateLimit } from "express-rate-limit";
-import path from "path";
-
+dns.setServers(["8.8.8.8","1.1.1.1"])
 const app = express();
-
-// Enable trust proxy for platforms like Render/Vercel (required for rate-limit)
-app.set("trust proxy", 1);
-
-// Rate limiting (sensible limit: 1000 requests per 15 minutes)
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 1000,
-  message: { success: false, message: "Too many requests, please try again later." },
-  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
-  legacyHeaders: false, // Disable `X-RateLimit-*` headers
-});
-app.use(limiter);
-
-// Allowed Origins Configuration
-app.set("trust proxy", 1);
+   
 const allowedOrigins = [
-  process.env.FRONTEND_URL, // Dynamically pulled from environment variable
+  "http://localhost:5173",
+  "https://e-commerce-grocery-website-iota.vercel.app",
+  "https://e-commerce-grocery-website-six.vercel.app",
   "https://e-commerce-grocery-website-tau.vercel.app",
-  "http://localhost:5173", // Vite default
-  "http://localhost:3000",
-  "https://e-commerce-grocery-website-beta.vercel.app" // React/Next default
+  "https://e-commerce-grocery-website-beta.vercel.app",
+  process.env.FRONTEND_URL,
 ].filter(Boolean);
 
+// CORS
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (e.g., Postman, mobile apps) or matching origins
-      if (
-        !origin ||
-        allowedOrigins.includes(origin) ||
-        /^http:\/\/localhost:\d+$/.test(origin)
-      ) {
-        callback(null, true);
-      } else {
-        callback(new Error(`CORS policy blocked access for origin: ${origin}`));
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
       }
+
+      console.log("CORS blocked:", origin);
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS",
+    ],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Accept",
+      "X-Requested-With",
+    ],
   })
 );
 
+// Rate limiter
+app.use(
+  rateLimit({
+    windowMs: 30 * 60 * 1000,
+    max: 1000,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => req.method === "OPTIONS",
+  })
+);
+
+// Body parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Static file serving for local uploads
-app.use("/uploads", express.static(path.resolve("uploads")));
-
-// Health check endpoint
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok", timestamp: new Date() });
+// Health check
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Server is running smoothly",
+    environment: process.env.NODE_ENV || "development",
+  });
 });
 
-// API Routes
+// Database connection middleware
+app.use("/api/v1", async (req, res, next) => {
+  try {
+    await connectDb();
+    next();
+  } catch (error) {
+    console.error("Database middleware error:", error.message);
+
+    res.status(503).json({
+      success: false,
+      message: "Database connection failed",
+      error:
+        process.env.NODE_ENV === "production"
+          ? "Please try again later"
+          : error.message,
+    });
+  }
+});
+
+// API routes
 app.use("/api/v1", MainRouter);
 
-// Global Error Handler
+// Global error handler
 app.use(GlobalError);
 
 export default app;

@@ -1,99 +1,58 @@
-import { createContext, useEffect, useState, useCallback } from "react";
-import {
-  getuser,
-  getItems,
-  getWishList,
-  getAdmin,
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { 
+  getuser, 
+  getItems, 
+  getWishList, 
+  getAdmin, 
+  logout, 
+  Login, 
+  addtoCart, 
+  Cartupdate, 
+  deleteItem, 
   Getcart,
-  logoutUser,
-  deleteWishItem,
+  toogleWishlist
 } from "../services/api.js";
 
 export const GlobalContext = createContext();
 
 export function Global({ children }) {
-  // Admin State
+  // 1. Admin state
   const [adminData, setAdminData] = useState(null);
-  const [adminRefresh, setAdminRefresh] = useState(true);
+  const [adminRefresh, setAdminRefresh] = useState(false);
 
-  // User Auth State
+  // 2. User state
   const [user, setUser] = useState(null);
   const [refresh, setRefresh] = useState(true);
 
-  // Products State
+  // 3. Product state
   const [product, setProduct] = useState([]);
   const [productLoading, setProductLoading] = useState(false);
 
-  // Wishlist State
+  // 4. Wishlist state
   const [wishdata, setWishdata] = useState([]);
-  const [loadWish, setLoadWish] = useState(false);
+  const [loadWish, setLoadwish] = useState(false);
 
-  // Cart State
+  // 5. Cart state
   const [cart, setCart] = useState([]);
   const [cartLoading, setCartLoading] = useState(false);
   const [total, setTotal] = useState(0);
 
-  // 1. Fetch Current User
-  const curr_user = useCallback(async () => {
-    try {
-      setRefresh(true);
-      const data = await getuser();
-      setUser(data?.user || (data?._id ? data : null));
-      return data?.user || null;
-    } catch {
-      setUser(null);
-      return null;
-    } finally {
-      setRefresh(false);
-    }
-  }, []);
+  // Flexible ID resolver for products & cart items
+  const getItemId = (item) => {
+    if (!item) return null;
+    return item.productId?._id || item.productId || item._id || item.id;
+  };
 
-  // 2. Fetch Admin Details
-  const admins = useCallback(async () => {
-    try {
-      setAdminRefresh(true);
-      const data = await getAdmin();
-      const resolvedAdmin = data?.admin || (data?.role === "admin" ? data : null);
-      setAdminData(resolvedAdmin);
-      return resolvedAdmin;
-    } catch {
-      setAdminData(null);
-      return null;
-    } finally {
-      setAdminRefresh(false);
-    }
-  }, []);
-
-  // 3. Fetch Products Catalog (Public)
-  const fetchProducts = useCallback(async () => {
-    try {
-      setProductLoading(true);
-      const res = await getItems();
-      const list = res?.data || res?.items || (Array.isArray(res) ? res : []);
-      setProduct(list);
-      return list;
-    } catch {
-      setProduct([]);
-      return [];
-    } finally {
-      setProductLoading(false);
-    }
-  }, []);
-
-  // 4. Fetch Cart
+  // Fetch Cart (for authenticated users)
   const fetchCart = useCallback(async () => {
     try {
       setCartLoading(true);
       const res = await Getcart();
-      const rawProducts = res?.data?.products || (Array.isArray(res?.data) ? res.data : []);
-      // Filter out any invalid/deleted product entries
-      const validProducts = rawProducts.filter(
-        (item) => item.productId != null
-      );
-      setCart(validProducts);
-      setTotal(validProducts.length);
-      return validProducts;
-    } catch {
+      const products = res?.data?.products || res?.cart?.products || (Array.isArray(res?.data) ? res.data : []);
+      setCart(products);
+      setTotal(products.length);
+      return products;
+    } catch (error) {
       setCart([]);
       setTotal(0);
       return [];
@@ -102,109 +61,248 @@ export function Global({ children }) {
     }
   }, []);
 
-  // 5. Fetch Wishlist
-  const getWishlist = useCallback(async () => {
+  // Fetch Admin Details (only if admin)
+  const admins = useCallback(async () => {
     try {
-      setLoadWish(true);
-      const res = await getWishList();
-      const list =
-        res?.wish?.products ||
-        (Array.isArray(res?.wish) ? res.wish : []) ||
-        res?.data ||
-        [];
-      // Keep only valid product entries
-      const validItems = list.filter((item) => {
-        const prod = item.productId || item;
-        return prod && (prod._id || prod.name);
-      });
-      setWishdata(validItems);
-      return validItems;
-    } catch {
-      setWishdata([]);
-      return [];
+      setAdminRefresh(true);
+      const data = await getAdmin();
+      setAdminData(data);
+      return data;
+    } catch (error) {
+      setAdminData(null);
+      return null;
     } finally {
-      setLoadWish(false);
+      setAdminRefresh(false);
     }
   }, []);
 
-  // 6. Remove from Wishlist helper
-  const removeFromWishlist = async (productId) => {
+  // Fetch Wishlist
+  const getWishlist = useCallback(async () => {
     try {
-      await deleteWishItem(productId);
-      setWishdata((prev) =>
-        prev.filter((item) => {
-          const id = item.productId?._id || item.productId || item._id;
-          return String(id) !== String(productId);
-        })
-      );
-    } catch (err) {
-      console.error("Failed to remove from wishlist:", err);
+      setLoadwish(true);
+      const res = await getWishList();
+      const wish = res?.wish || res?.data || [];
+      setWishdata(wish);
+      return wish;
+    } catch (error) {
+      setWishdata([]);
+      return [];
+    } finally {
+      setLoadwish(false);
     }
+  }, []);
+
+  // Check Current Authenticated User
+  const curr_user = useCallback(async () => {
+    try {
+      setRefresh(true);
+      const data = await getuser();
+      const currentUser = data?.user || (data?.email ? data : null);
+
+      if (currentUser) {
+        setUser(currentUser);
+        const pendingLoads = [fetchCart(), getWishlist()];
+        if (currentUser.role === "admin") {
+          pendingLoads.push(admins());
+        }
+        await Promise.all(pendingLoads);
+        return currentUser;
+      } else {
+        setUser(null);
+        setCart([]);
+        setTotal(0);
+        return null;
+      }
+    } catch (error) {
+      setUser(null);
+      setCart([]);
+      setTotal(0);
+      return null;
+    } finally {
+      setRefresh(false);
+    }
+  }, [fetchCart, getWishlist, admins]);
+
+  // Fetch Public Products
+  const fetchProducts = useCallback(async () => {
+    try {
+      setProductLoading(true);
+      const res = await getItems();
+      const products = res?.data || (Array.isArray(res) ? res : []);
+      setProduct(products);
+      return products;
+    } catch (error) {
+      setProduct([]);
+      return [];
+    } finally {
+      setProductLoading(false);
+    }
+  }, []);
+
+  // Centralized Simple Login Action
+  const loginUser = async (credentials) => {
+    const res = await Login(credentials);
+    const loggedInUser = await curr_user();
+    return { res, user: loggedInUser };
   };
 
-  // 7. Full Logout
+  // Centralized Simple Logout Action
   const handleUserLogout = async () => {
     try {
-      await logoutUser();
-    } catch (err) {
-      console.warn("Logout request failed:", err);
+      await logout();
+    } catch (error) {
+      console.error("Logout error:", error?.message || error);
     } finally {
       setUser(null);
-      setAdminData(null);
       setCart([]);
-      setWishdata([]);
       setTotal(0);
+      setAdminData(null);
     }
   };
 
-  // Run on initial mount
+  // ========================================================
+  // Flexible Cart Handlers (Unified Optimistic Updates)
+  // ========================================================
+  const addToCart = async (productItem, quantity = 1) => {
+    const productId = getItemId(productItem);
+    if (!productId) return;
+
+    const previousCart = [...cart];
+
+    // Optimistic UI update
+    setCart((prev) => {
+      const items = Array.isArray(prev) ? prev : [];
+      const exists = items.find((item) => getItemId(item) === productId);
+
+      if (exists) {
+        return items.map((item) =>
+          getItemId(item) === productId
+            ? { ...item, quantity: (item.quantity || 1) + quantity }
+            : item
+        );
+      }
+      return [...items, { productId: productItem, quantity }];
+    });
+    setTotal((prev) => prev + 1);
+
+    try {
+      await addtoCart(productId);
+    } catch (err) {
+      // Rollback on error
+      setCart(previousCart);
+      setTotal(previousCart.length);
+      throw err;
+    }
+  };
+
+  const updateCartQuantity = async (productId, nextQuantity) => {
+    const previousCart = [...cart];
+
+    if (nextQuantity <= 0) {
+      return removeFromCart(productId);
+    }
+
+    // Optimistic update
+    setCart((prev) => {
+      const items = Array.isArray(prev) ? prev : [];
+      return items.map((item) =>
+        getItemId(item) === productId ? { ...item, quantity: nextQuantity } : item
+      );
+    });
+
+    try {
+      await Cartupdate(productId, nextQuantity);
+    } catch (err) {
+      setCart(previousCart);
+      throw err;
+    }
+  };
+
+  const removeFromCart = async (productId) => {
+    const previousCart = [...cart];
+
+    // Optimistic removal
+    setCart((prev) => {
+      const items = Array.isArray(prev) ? prev : [];
+      const updated = items.filter((item) => getItemId(item) !== productId);
+      setTotal(updated.length);
+      return updated;
+    });
+
+    try {
+      await deleteItem(productId);
+    } catch (err) {
+      setCart(previousCart);
+      setTotal(previousCart.length);
+      throw err;
+    }
+  };
+
+  const removeFromWishlist = async (productId) => {
+    try {
+      await toogleWishlist(productId);
+      await getWishlist();
+    } catch (err) {
+      console.error("Wishlist remove error:", err);
+    }
+  };
+
+  // Initial Load: check session and load catalog
   useEffect(() => {
     curr_user();
-    admins();
     fetchProducts();
-    fetchCart();
-    getWishlist();
-  }, [curr_user, admins, fetchProducts, fetchCart, getWishlist]);
+  }, [curr_user, fetchProducts]);
 
   return (
     <GlobalContext.Provider
       value={{
-        // Admin
+        // Auth state & actions
+        user,
+        setUser,
+        refresh,
+        isAuthenticated: !!user,
+        isAdmin: user?.role === "admin" || adminData?.admin?.role === "admin",
+        curr_user,
+        loginUser,
+        handleUserLogout,
+
+        // Admin state
         adminData,
         setAdminData,
         adminRefresh,
         admins,
 
-        // User
-        user,
-        setUser,
-        refresh,
-        curr_user,
-        handleUserLogout,
-
-        // Catalog
+        // Product state
         product,
         setProduct,
         productLoading,
         fetchProducts,
 
-        // Cart
+        // Cart state & simplified actions
         cart,
         setCart,
         cartLoading,
-        fetchCart,
         total,
         setTotal,
+        fetchCart,
+        addToCart,
+        updateCartQuantity,
+        removeFromCart,
+        getItemId,
 
         // Wishlist
         wishdata,
-        setWishdata,
         loadWish,
         getWishlist,
         removeFromWishlist,
+        toggleWishlist: removeFromWishlist,
       }}
     >
       {children}
     </GlobalContext.Provider>
   );
 }
+
+// Custom hook for flexible and simple component consumption
+export const useApp = () => useContext(GlobalContext);
+export default Global;
