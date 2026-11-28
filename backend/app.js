@@ -1,3 +1,4 @@
+
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -10,7 +11,6 @@ import GlobalError from "./Error.js";
 
 const app = express();
 
-// 1. Allowed frontend URLs
 const allowedOrigins = [
   "http://localhost:5173",
   "https://e-commerce-grocery-website-iota.vercel.app",
@@ -20,25 +20,18 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
-// 2. CORS Configuration
+// CORS
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow Postman and server-to-server requests
-      if (!origin) {
+      if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      console.log("CORS blocked origin:", origin);
+      console.log("CORS blocked:", origin);
       return callback(new Error("Not allowed by CORS"));
     },
-
     credentials: true,
-
     methods: [
       "GET",
       "POST",
@@ -47,19 +40,16 @@ app.use(
       "DELETE",
       "OPTIONS",
     ],
-
     allowedHeaders: [
       "Content-Type",
       "Authorization",
       "Accept",
       "X-Requested-With",
     ],
-
-    optionsSuccessStatus: 204,
   })
 );
 
-// 3. Rate Limiter
+// Rate limiter
 app.use(
   rateLimit({
     windowMs: 30 * 60 * 1000,
@@ -70,12 +60,12 @@ app.use(
   })
 );
 
-// 4. Body Parsers
+// Body parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// 5. Health Check
+// Health check
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
@@ -84,21 +74,29 @@ app.get("/", (req, res) => {
   });
 });
 
-// 6. API Routes and Database Connection
-app.use(
-  "/api/v1",
-  async (req, res, next) => {
-    try {
-      await connectDb();
-      next();
-    } catch (error) {
-      next(error);
-    }
-  },
-  MainRouter
-);
+// Database connection middleware
+app.use("/api/v1", async (req, res, next) => {
+  try {
+    await connectDb();
+    next();
+  } catch (error) {
+    console.error("Database middleware error:", error.message);
 
-// 7. Global Error Handler
+    res.status(503).json({
+      success: false,
+      message: "Database connection failed",
+      error:
+        process.env.NODE_ENV === "production"
+          ? "Please try again later"
+          : error.message,
+    });
+  }
+});
+
+// API routes
+app.use("/api/v1", MainRouter);
+
+// Global error handler
 app.use(GlobalError);
 
 export default app;

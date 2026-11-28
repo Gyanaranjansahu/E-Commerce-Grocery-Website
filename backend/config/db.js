@@ -1,47 +1,57 @@
+
 import mongoose from "mongoose";
-import dns from "node:dns";
 
-let connectionPromise;
+let connectionPromise = null;
 
-if (process.env.NODE_ENV !== "production") {
-  try {
-    dns.setServers(["8.8.8.8", "1.1.1.1"]);
-  } catch (error) {
-    console.warn(
-      "Could not set custom DNS servers, using system default:",
-      error.message
-    );
-  }
-}
-
-async function connectDb() {
+const connectDb = async () => {
+  // Already connected
   if (mongoose.connection.readyState === 1) {
     return mongoose.connection;
   }
 
-  const mongoUrl = process.env.MONGODB_URL;
-  if (!mongoUrl) {
-    const error = new Error("MONGODB_URL is not configured");
-    error.code = "MONGODB_URL_MISSING";
-    throw error;
+  // Connection is already in progress
+  if (connectionPromise) {
+    return connectionPromise;
   }
 
-  if (!connectionPromise) {
-    connectionPromise = mongoose
-      .connect(mongoUrl, { serverSelectionTimeoutMS: 8000 })
-      .then(() => {
-        console.log(
-          "✅ MongoDB Atlas connected successfully to database:",
-          mongoose.connection.name
-        );
-        return mongoose.connection;
-      })
-      .finally(() => {
-        connectionPromise = null;
-      });
+  const mongoUrl = process.env.MONGODB_URL;
+
+  if (!mongoUrl) {
+    throw new Error(
+      "MONGODB_URL is missing in environment variables"
+    );
   }
+
+  connectionPromise = mongoose
+    .connect(mongoUrl, {
+      serverSelectionTimeoutMS: 15000,
+      connectTimeoutMS: 15000,
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+      minPoolSize: 0,
+      bufferCommands: false,
+    })
+    .then(() => {
+      console.log(
+        "MongoDB Connected Successfully:",
+        mongoose.connection.name
+      );
+
+      return mongoose.connection;
+    })
+    .catch((error) => {
+      console.error(
+        "MongoDB Connection Failed:",
+        error.message
+      );
+
+      throw error;
+    })
+    .finally(() => {
+      connectionPromise = null;
+    });
 
   return connectionPromise;
-}
+};
 
 export default connectDb;
