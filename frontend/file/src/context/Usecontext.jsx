@@ -76,6 +76,22 @@ export function Global({ children }) {
     }
   }, []);
 
+  // Fetch Wishlist
+  const getWishlist = useCallback(async () => {
+    try {
+      setLoadwish(true);
+      const res = await getWishList();
+      const wish = res?.wish || res?.data || [];
+      setWishdata(wish);
+      return wish;
+    } catch (error) {
+      setWishdata([]);
+      return [];
+    } finally {
+      setLoadwish(false);
+    }
+  }, []);
+
   // Check Current Authenticated User
   const curr_user = useCallback(async () => {
     try {
@@ -85,12 +101,11 @@ export function Global({ children }) {
 
       if (currentUser) {
         setUser(currentUser);
-        // Automatically fetch cart & wishlist for authenticated session
-        fetchCart();
-        getWishlist();
+        const pendingLoads = [fetchCart(), getWishlist()];
         if (currentUser.role === "admin") {
-          admins();
+          pendingLoads.push(admins());
         }
+        await Promise.all(pendingLoads);
         return currentUser;
       } else {
         setUser(null);
@@ -106,7 +121,7 @@ export function Global({ children }) {
     } finally {
       setRefresh(false);
     }
-  }, [fetchCart, admins]);
+  }, [fetchCart, getWishlist, admins]);
 
   // Fetch Public Products
   const fetchProducts = useCallback(async () => {
@@ -121,22 +136,6 @@ export function Global({ children }) {
       return [];
     } finally {
       setProductLoading(false);
-    }
-  }, []);
-
-  // Wishlist Operations
-  const getWishlist = useCallback(async () => {
-    try {
-      setLoadwish(true);
-      const res = await getWishList();
-      const wish = res?.wish || res?.data || [];
-      setWishdata(wish);
-      return wish;
-    } catch (error) {
-      setWishdata([]);
-      return [];
-    } finally {
-      setLoadwish(false);
     }
   }, []);
 

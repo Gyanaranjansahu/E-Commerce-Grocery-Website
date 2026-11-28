@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Printer, 
   Download, 
@@ -8,7 +9,7 @@ import {
   FileText, 
   Calendar, 
   Building2, 
-  Beaker,
+  Beaker,  
   Award
 } from 'lucide-react';
 
@@ -50,12 +51,12 @@ export default function LabPurityReport() {
       
       {/* ACTION BAR (Hidden in print mode) */}
       <div className="max-w-4xl mx-auto mb-6 flex items-center justify-between print:hidden">
-        <a 
-          href="/"
+        <Link
+          to="/"
           className="text-xs font-semibold uppercase tracking-wider text-[#1B3821] hover:underline flex items-center gap-1.5"
         >
           ← Return to Storefront
-        </a>
+        </Link>
 
         <div className="flex gap-3">
           <button 

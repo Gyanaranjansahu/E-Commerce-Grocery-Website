@@ -645,7 +645,7 @@ export default function ForgotPassword() {
                 </div>
               </div>
             )}
-          </>
+          </>  
         )}
 
         {/* Footer Navigation */}

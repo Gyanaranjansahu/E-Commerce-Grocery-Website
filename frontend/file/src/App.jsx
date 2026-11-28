@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { Route, Routes, Navigate } from 'react-router-dom';
+import { Route, Routes, Navigate, Link } from 'react-router-dom';
 import GroceryLoader from './components/Loading.jsx';
 import Protection from './Router/Protective.jsx';
 import AdminProtection from './Router/adminProtection.jsx';
@@ -29,9 +29,9 @@ const NotFound = () => (
     <span className="text-4xl font-serif font-bold text-emerald-950 mb-2">404</span>
     <h2 className="text-lg font-serif font-semibold text-stone-800 mb-2">Harvest Page Not Found</h2>
     <p className="text-xs text-stone-500 mb-6 max-w-sm">The route you requested does not exist or has been relocated to another section.</p>
-    <a href="/" className="px-5 py-2.5 bg-[#1B3821] text-white text-xs font-semibold uppercase tracking-wider rounded-md hover:bg-[#122817] transition">
+    <Link to="/" className="px-5 py-2.5 bg-[#1B3821] text-white text-xs font-semibold uppercase tracking-wider rounded-md hover:bg-[#122817] transition">
       Back to Home
-    </a>
+    </Link>
   </div>
 );
 
@@ -97,10 +97,23 @@ const App = () => {
                 <AdminDashboard />
               </AdminProtection>
             }
-          >
-            <Route path="create-product" element={<CreateProduct />} />
-            <Route path="create" element={<CreateProduct />} />
-          </Route>
+          />
+          <Route
+            path="/admin/dashboard/create-product"
+            element={
+              <AdminProtection>
+                <CreateProduct />
+              </AdminProtection>
+            }
+          />
+          <Route
+            path="/admin/dashboard/create"
+            element={
+              <AdminProtection>
+                <CreateProduct />
+              </AdminProtection>
+            }
+          />
 
           <Route
             path="/adminDashboard"

@@ -1,11 +1,12 @@
 import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Costume from '../services/costume.js';
 import { GlobalContext } from '../context/Usecontext.jsx';
 import { toast } from 'sonner';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { admins, curr_user } = useContext(GlobalContext);
 
   const [data, setData] = useState({
@@ -33,7 +34,13 @@ const AdminLogin = () => {
           return;
         }
         toast.success("Welcome back, Administrator");
-        navigate('/admin/dashboard', { replace: true });
+        const destination = location.state?.from?.pathname;
+        navigate(
+          destination?.startsWith("/admin/")
+            ? destination
+            : "/admin/dashboard",
+          { replace: true }
+        );
       }
     } catch (err) {
       toast.error(err.message || 'Authentication failed');

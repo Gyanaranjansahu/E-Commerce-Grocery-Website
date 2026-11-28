@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Costume from '../services/costume.js';
 import { useApp } from '../context/Usecontext.jsx';
-import { useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 // =========================================================================
@@ -17,6 +17,7 @@ import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { loading, handleLogin } = Costume();
   const { curr_user } = useApp();
 
@@ -51,12 +52,18 @@ export default function Login() {
       setErrorMessage('');
       const res = await handleLogin(credentials);
       if (res) {
-        try {
-          await curr_user();
-        } catch (_) {
-          // Continue to navigate even if user profile fetch is pending
+        const currentUser = await curr_user();
+        if (!currentUser) {
+          setErrorMessage("Your account could not be loaded. Please try signing in again.");
+          return;
         }
-        navigate('/', { replace: true });
+
+        const from = location.state?.from;
+        const destination =
+          from?.pathname?.startsWith("/") && !from.pathname.startsWith("/admin")
+            ? `${from.pathname}${from.search || ""}${from.hash || ""}`
+            : "/";
+        navigate(destination, { replace: true });
       }
     } catch (err) {
       setErrorMessage(err.message || "Invalid credentials. Please try again.");
